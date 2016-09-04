@@ -1,4 +1,13 @@
+/**
+ * Name: problem.c
+ * Author: Bryan Ehlers
+ * Operating Systems - UIowa
+ * Assignment 1, Problem 4
+ */
+
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
 
 #define MAX_WORD_LENGTH 65
@@ -9,41 +18,94 @@ struct Node {
 	struct Node* right;
 };
 
+struct Node * root = NULL;
+
+struct Node * buildNode (char data[]) {
+	struct Node * node = malloc(sizeof(struct Node));
+	strcpy(node->data, data);
+	node->left = NULL;
+	node->right = NULL;
+	return node;
+}
+
+struct Node * insert (struct Node * currentNode, char data[]) {
+	if (currentNode == NULL) {
+		return buildNode(data);
+	} else {
+		if (strcmp(data, currentNode->data) < 0) {
+			currentNode->left = insert(currentNode->left, data);
+		} else {
+			currentNode->right = insert(currentNode->right, data);
+		}
+		return currentNode;
+	}
+}
+
 struct Node* buildTreeFromFile() {
-	FILE *file = fopen("problem5.input1","r");
+	FILE *file = fopen("problem4.input1","r");
 	if (file == NULL) {
 		printf("Input file not found.\n");
 		return NULL;
 	}
 	char word[MAX_WORD_LENGTH] ; 
 	while(fscanf(file, "%s", word) == 1) {
-		// use these num to build the tree
+		if (root == NULL) {
+			root = buildNode(word);
+		} else {
+			insert(root, word);
+		}
 	}
 	fclose(file);
-	return NULL; // return tree root node here.
+	return root; // return tree root node here.
 }
 
-
-
 void print_preorder(struct Node* tree) {
-	// Implement this function.
+	// recursive base-case
+	if (tree == NULL) {
+		return;
+	}
+	printf("%s", tree->data);
+	print_preorder(tree->left);
+	print_preorder(tree->right);
 }
 
 void print_inorder(struct Node* tree) {
-	// Implement this function.
+	// recursive base-case
+	if (tree == NULL) {
+		return;
+	}
+	print_inorder(tree->left);
+	printf("%s", tree->data);
+	print_inorder(tree->right);
 }
 
 void print_postorder(struct Node* tree) {
-
-}	// Implement this function.
+	// recursive base-case
+	if (tree == NULL) {
+		return;
+	}
+	print_postorder(tree->left);
+	print_postorder(tree->right);
+	printf("%s", tree->data);
+}
 
 bool found_in_tree(char *word_to_search, struct Node* tree) {
-		// Implement this function.
-	return true;
+	// recursive base-case
+	if (tree == NULL) {
+		return false;
+	} else {
+		if (!strcmp(word_to_search, tree->data)) {
+			return true;
+		} else if (strcmp(word_to_search, tree->data) < 0){
+			return found_in_tree(word_to_search, tree->left);
+		} else {
+			return found_in_tree(word_to_search, tree->right);
+		}
+	}
 }
 
 void use_tree_searching(struct Node* tree) {
-	FILE *file = fopen("problem5.input2","r");
+	FILE *file = fopen("problem4.input2","r");
 	if (file == NULL) {
 		printf("Input file not found.\n");
 		return;
@@ -61,12 +123,13 @@ void use_tree_searching(struct Node* tree) {
 
 int main (int argc , char * argv []) {
 	struct Node* tree = buildTreeFromFile();
+	printf("\nPre-Order:\n");
 	print_preorder(tree);
-	printf("\n");
+	printf("\nIn-Order:\n");
 	print_inorder(tree);
-	printf("\n");
+	printf("\nPost-Order:\n");
 	print_postorder(tree);
-	printf("\n");
+	printf("\nSearching...\n");
 	use_tree_searching(tree);
 	return 0;
 }
