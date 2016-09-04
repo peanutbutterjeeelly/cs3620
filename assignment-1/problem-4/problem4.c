@@ -18,8 +18,13 @@ struct Node {
 	struct Node* right;
 };
 
+// to keep track of where the root is
 struct Node * root = NULL;
 
+/** 
+ * helper function to allocate memory for each new node, set up 
+ * the pointers, and set the data field.
+ */
 struct Node * buildNode (char data[]) {
 	struct Node * node = malloc(sizeof(struct Node));
 	strcpy(node->data, data);
@@ -28,6 +33,10 @@ struct Node * buildNode (char data[]) {
 	return node;
 }
 
+/**
+ * helper function to insert a node based off of current node's position.
+ * To just insert a node to the tree, insert(root, data).
+ */
 struct Node * insert (struct Node * currentNode, char data[]) {
 	if (currentNode == NULL) {
 		return buildNode(data);
@@ -113,9 +122,9 @@ void use_tree_searching(struct Node* tree) {
 	char word_to_search[MAX_WORD_LENGTH];
 	while(fscanf(file, "%s", word_to_search) == 1) {
 		if (found_in_tree(word_to_search, tree)) {
-			printf("yes ");
+			printf("Found %s\n", word_to_search);
 		} else {
-			printf("no ");
+			printf("Not Found %s\n", word_to_search);
 		}
 	}
 	fclose(file);
@@ -123,7 +132,7 @@ void use_tree_searching(struct Node* tree) {
 
 int main (int argc , char * argv []) {
 	struct Node* tree = buildTreeFromFile();
-	printf("\nPre-Order:\n");
+	printf("Pre-Order:\n");
 	print_preorder(tree);
 	printf("\nIn-Order:\n");
 	print_inorder(tree);
