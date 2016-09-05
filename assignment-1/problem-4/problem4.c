@@ -50,6 +50,20 @@ struct Node * insert (struct Node * currentNode, char data[]) {
 	}
 }
 
+/**
+ * helper function to destroy the binary tree, freeing all 
+ * the memory that was previously allocated.
+ */
+void destroy (struct Node * tree) {
+	if (tree == NULL) {
+		return;
+	}
+	destroy (tree->left);
+	destroy (tree->right);
+	printf("Freeing a node\n");
+	free (tree);
+}
+
 struct Node* buildTreeFromFile() {
 	FILE *file = fopen("problem4.input1","r");
 	if (file == NULL) {
@@ -140,5 +154,6 @@ int main (int argc , char * argv []) {
 	print_postorder(tree);
 	printf("\nSearching...\n");
 	use_tree_searching(tree);
+	destroy(tree);
 	return 0;
 }
