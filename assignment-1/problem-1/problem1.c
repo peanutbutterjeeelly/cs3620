@@ -15,7 +15,6 @@
 #include <assert.h>
 #include <string.h>
 #include <time.h>
-#include <pthread.h>
 #include "sort.h"
 
 #define BUFSIZE 1024
