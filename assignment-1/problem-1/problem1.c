@@ -15,18 +15,26 @@
 #include <assert.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 #include "sort.h"
 
 #define BUFSIZE 1024
 #define KEYSIZE 4
 #define VALUESIZE 96
 
+int compare (const void * a, const void * b) {
+	rec_t *recA = (rec_t *)a;
+	rec_t *recB = (rec_t *)b;
+
+	return (recA->key - recB->key);
+}
+
 void usage (char * prog);
 off_t fsize (const char * fileName);
 
 int main (int argc, char * argv[]) {
 	clock_t begin = clock();
-	
+
 	// assume 4 byte key + 96 byte value
 	assert(sizeof(rec_t) == 100);
 
@@ -55,19 +63,12 @@ int main (int argc, char * argv[]) {
 	int numkeys = fileSize/(KEYSIZE+VALUESIZE);	
 
 	// allocate memory for array to hold records in
-	rec_t **recs = malloc(numkeys * sizeof(rec_t));
+	rec_t * recs = malloc(numkeys * sizeof(rec_t));
 	if (recs == NULL) {
 		perror("malloc failed");
 		exit(EXIT_FAILURE);
 	}
-	for (int i = 0; i < numkeys; i++) {
-		recs[i] = malloc(sizeof(rec_t));
-		if (recs[i] == NULL) {
-			perror("malloc failed");
-			exit(EXIT_FAILURE);
-		}
-	}
-
+	
 	// open up the file, check errors
 	if ((fd = open(inFile, O_RDONLY)) < 0) {
 		perror("open inFile");
@@ -82,46 +83,27 @@ int main (int argc, char * argv[]) {
 			perror("read inFile");
 			exit(EXIT_FAILURE);
 		}
-		recs[i]->key = buf.key;
-//		printf("Key: %u\nValue: ", recs[i]->key);
+		recs[i].key = buf.key;
+//		printf("Key: %u\nValue: ", recs[i].key);
 		for (int j = 0; j < NUMRECS; j++) {
-			recs[i]->record[j] = buf.record[j];
-//			printf("%d ", recs[i]->record[j]);
+			recs[i].record[j] = buf.record[j];
+			//printf("%d ", recs[i].record[j]);
 		} //printf("\n");
 	}
 	close(fd);
 
 	// helpers for sorting
 	rec_t temp;
-	int j;
 
-	// sort the array of records, insertion sort
-	printf("Sorting...\n");
-	for (int i = 1; i < numkeys; i++) {
-		j = i;
-		while ((j > 0) && (recs[j-1]->key > recs[j]->key)) {
-			// swap the keys
-			temp.key = recs[j]->key;
-			recs[j]->key = recs[j-1]->key;
-			recs[j-1]->key = temp.key;
+	qsort (recs, numkeys, sizeof(rec_t), compare);	
 
-			// swap the values
-			for (int k = 0; k < NUMRECS; k++) {
-				temp.record[k] = recs[j]->record[k];
-				recs[j]->record[k] = recs[j-1]->record[k];
-				recs[j-1]->record[k] = temp.record[k];
-			}
-			j--;
-		}
-	}
-/*
 	for (int i = 0; i < numkeys; i++) {
-		printf("Key: %u\nValue: ", recs[i]->key);
+		printf("Key: %u\nValue: ", recs[i].key);
 		for (int j = 0; j < NUMRECS; j++) {
-			printf("%d ", recs[i]->record[j]);
+			printf("%d ", recs[i].record[j]);
 		} printf("\n");
 	}
-*/
+
 	if ((fd = open(outFile, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU)) < 0) {
 		perror("open outFile");
 		exit(EXIT_FAILURE);
@@ -129,26 +111,28 @@ int main (int argc, char * argv[]) {
 
 	int wrret;
 	for (int i = 0; i < numkeys; i++) {
-		
-	// this part is trash I think will take a long time with more records, redundant
-		temp.key = recs[i]->key;
+		if ((wrret = write(fd, &recs[i], sizeof(rec_t))) < 0) {
+			perror("write");
+			exit(EXIT_FAILURE);
+		}		
+
+
+/*	// this part is trash I think will take a long time with more records, redundant
+		temp.key = recs[i].key;
 		for (int j = 0; j < NUMRECS; j++) {
-			temp.record[j] = recs[i]->record[j];
+			temp.record[j] = recs[i].record[j];
 		}
 		
 		wrret = write(fd, &temp, sizeof(rec_t));
 		if (wrret != sizeof(rec_t)) {
 			perror("write");
 			exit(EXIT_FAILURE);
-		}
+		}*/
 	}
 	close(fd);
 
-	// free the memory!
-	for (int i = 0; i < numkeys; i++) {
-		free(recs[i]);
-	} free(recs);	
-
+	// free the memory
+	free(recs);	
 	clock_t end = clock();
 	printf("Time: %f\n", (double)(end-begin)/CLOCKS_PER_SEC);
 

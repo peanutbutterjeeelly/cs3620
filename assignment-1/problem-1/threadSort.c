@@ -22,12 +22,17 @@
 #define KEYSIZE 4
 #define VALUESIZE 96
 
-int compare (const void * a, const void * b) {
-	rec_t *recA = (rec_t *)a;
-	rec_t *recB = (rec_t *)b;
+struct parameters {
+	rec_t * recs;
+	size_t length;
+	int depth;
+};
 
-	return (recA->key - recB->key);
-}
+int compare (const void * a, const void * b);
+void *sort_thread (void *pv);
+void merge (rec_t * start, rec_t * mid, rec_t * end);
+void sort_mt (rec_t * start, size_t length, int depth);
+void sort (rec_t * recs, size_t length);
 
 void usage (char * prog);
 off_t fsize (const char * fileName);
@@ -94,14 +99,16 @@ int main (int argc, char * argv[]) {
 
 	// helpers for sorting
 	rec_t temp;
-
-	qsort (recs, numkeys, sizeof(rec_t), compare);	
+	
+	printf("Sorting...\n");
+	//qsort (recs, numkeys, sizeof(rec_t), compare);	
+	sort (recs, numkeys);
 
 	for (int i = 0; i < numkeys; i++) {
-		//printf("Key: %u\nValue: ", recs[i].key);
+		printf("Key: %u\nValue: ", recs[i].key);
 		for (int j = 0; j < NUMRECS; j++) {
-			//printf("%d ", recs[i].record[j]);
-		} //printf("\n");
+			printf("%d ", recs[i].record[j]);
+		} printf("\n");
 	}
 
 	if ((fd = open(outFile, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU)) < 0) {
@@ -139,11 +146,71 @@ int main (int argc, char * argv[]) {
 	return 0;
 }
 
+// used by qsort()
+int compare (const void * a, const void * b) {
+        rec_t *recA = (rec_t *)a;
+        rec_t *recB = (rec_t *)b;
+
+        return (recA->key - recB->key);
+}
+
+void merge (rec_t * start, rec_t * mid, rec_t * end) {
+	rec_t * res = malloc((end-start)*sizeof(*res));
+	rec_t * lhs = start, *rhs = mid, *dst = res;
+	
+	while (lhs != mid && rhs != end) {
+		*dst++ = (lhs->key <= rhs->key) ? *lhs++ : *rhs++;
+	}
+	
+	while (lhs != mid) {
+		*dst++ = *lhs++;
+	}
+
+	while (rhs != end) {
+		*dst++ = *rhs++;
+	}
+
+	memcpy(start, res, (end - start)*sizeof(*res));
+	free(res);
+}
+
+void sort_mt (rec_t * start, size_t length, int depth) {
+	if (length < 2) {
+		return;
+	}
+
+	if (depth <= 0 || length < 256) {
+		qsort (start, length, sizeof(rec_t), compare);
+		return;
+	}
+
+	struct parameters params = { start, length/2, depth/2 };
+	pthread_t thread;
+
+	pthread_create(&thread, NULL, sort_thread, &params);
+
+	sort_mt (start + length/2, length - length/2, depth/2);
+
+	pthread_join(thread, NULL);
+	merge(start, start + length/2, start + length);
+}
+
+void *sort_thread (void *pv) {
+	struct parameters *params = pv;
+	sort_mt (params->recs, params->length, params->depth);
+	return pv;
+}
+
+void sort (rec_t * recs, size_t length) {
+	sort_mt (recs, length, 4);
+}
+
 void usage (char * prog) {
 	fprintf(stderr, "usage: %s <-i input file> <-o output file>\n", prog);
 	exit(1);
 }
 
+// returns the size of a file
 off_t fsize (const char * filename) {
 	struct stat st;
 
