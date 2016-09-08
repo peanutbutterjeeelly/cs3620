@@ -103,14 +103,14 @@ int main (int argc, char * argv[]) {
 	printf("Sorting...\n");
 	//qsort (recs, numkeys, sizeof(rec_t), compare);	
 	sort (recs, numkeys);
-
+/*
 	for (int i = 0; i < numkeys; i++) {
-		printf("Key: %u\nValue: ", recs[i].key);
+		//printf("Key: %u\nValue: ", recs[i].key);
 		for (int j = 0; j < NUMRECS; j++) {
-			printf("%d ", recs[i].record[j]);
-		} printf("\n");
+		//	printf("%d ", recs[i].record[j]);
+		} //printf("\n");
 	}
-
+*/
 	if ((fd = open(outFile, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU)) < 0) {
 		perror("open outFile");
 		exit(EXIT_FAILURE);

@@ -22,6 +22,10 @@
 #define KEYSIZE 4
 #define VALUESIZE 96
 
+/**
+ * will return positive if key A is greater than key B,
+ * and will return negative if key A is less than key B
+ */
 int compare (const void * a, const void * b) {
 	rec_t *recA = (rec_t *)a;
 	rec_t *recB = (rec_t *)b;
@@ -55,8 +59,8 @@ int main (int argc, char * argv[]) {
 		}
 	}
 
-	rec_t buf;
-	int fd, ret;
+	// file I/O variables
+	int fd, r_ret, w_ret;
 
 	// get some helpful information
 	int fileSize = fsize(inFile);
@@ -77,58 +81,23 @@ int main (int argc, char * argv[]) {
 
 	// read the binary records
 	printf("Reading...\n");
-	for (int i = 0; i < numkeys; i++) {
-		ret = read(fd, &buf, sizeof(buf));
-		if (ret == 0) {
-			perror("read inFile");
-			exit(EXIT_FAILURE);
-		}
-		recs[i].key = buf.key;
-//		printf("Key: %u\nValue: ", recs[i].key);
-		for (int j = 0; j < NUMRECS; j++) {
-			recs[i].record[j] = buf.record[j];
-			//printf("%d ", recs[i].record[j]);
-		} //printf("\n");
-	}
+	r_ret = read (fd, recs, numkeys*sizeof(rec_t));
+	if (r_ret != (numkeys*sizeof(rec_t))) {
+		perror("read");
+		exit(EXIT_FAILURE);
+	}	
 	close(fd);
 
-	// helpers for sorting
-	rec_t temp;
+	// do the sorting...
+	printf("Sorting...\n");
+	qsort ((void *)recs, numkeys, sizeof(rec_t), compare);	
 
-	qsort (recs, numkeys, sizeof(rec_t), compare);	
-
-	for (int i = 0; i < numkeys; i++) {
-		printf("Key: %u\nValue: ", recs[i].key);
-		for (int j = 0; j < NUMRECS; j++) {
-			printf("%d ", recs[i].record[j]);
-		} printf("\n");
-	}
-
+	// write the sorted data to output file
 	if ((fd = open(outFile, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU)) < 0) {
 		perror("open outFile");
 		exit(EXIT_FAILURE);
 	}
-
-	int wrret;
-	for (int i = 0; i < numkeys; i++) {
-		if ((wrret = write(fd, &recs[i], sizeof(rec_t))) < 0) {
-			perror("write");
-			exit(EXIT_FAILURE);
-		}		
-
-
-/*	// this part is trash I think will take a long time with more records, redundant
-		temp.key = recs[i].key;
-		for (int j = 0; j < NUMRECS; j++) {
-			temp.record[j] = recs[i].record[j];
-		}
-		
-		wrret = write(fd, &temp, sizeof(rec_t));
-		if (wrret != sizeof(rec_t)) {
-			perror("write");
-			exit(EXIT_FAILURE);
-		}*/
-	}
+	w_ret = write (fd, recs, numkeys*sizeof(rec_t));
 	close(fd);
 
 	// free the memory
