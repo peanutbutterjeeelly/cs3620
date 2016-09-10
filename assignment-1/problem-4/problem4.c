@@ -27,6 +27,10 @@ struct Node * root = NULL;
  */
 struct Node * buildNode (char data[]) {
 	struct Node * node = malloc(sizeof(struct Node));
+	if (node == NULL) {
+		fprintf(stderr, "Error: malloc failed\n");
+		exit(EXIT_FAILURE);
+	}
 	strcpy(node->data, data);
 	node->left = NULL;
 	node->right = NULL;
@@ -60,7 +64,6 @@ void destroy (struct Node * tree) {
 	}
 	destroy (tree->left);
 	destroy (tree->right);
-	printf("Freeing a node\n");
 	free (tree);
 }
 
@@ -87,7 +90,7 @@ void print_preorder(struct Node* tree) {
 	if (tree == NULL) {
 		return;
 	}
-	printf("%s", tree->data);
+	printf("%s ", tree->data);
 	print_preorder(tree->left);
 	print_preorder(tree->right);
 }
@@ -98,7 +101,7 @@ void print_inorder(struct Node* tree) {
 		return;
 	}
 	print_inorder(tree->left);
-	printf("%s", tree->data);
+	printf("%s ", tree->data);
 	print_inorder(tree->right);
 }
 
@@ -109,7 +112,7 @@ void print_postorder(struct Node* tree) {
 	}
 	print_postorder(tree->left);
 	print_postorder(tree->right);
-	printf("%s", tree->data);
+	printf("%s ", tree->data);
 }
 
 bool found_in_tree(char *word_to_search, struct Node* tree) {
@@ -136,9 +139,9 @@ void use_tree_searching(struct Node* tree) {
 	char word_to_search[MAX_WORD_LENGTH];
 	while(fscanf(file, "%s", word_to_search) == 1) {
 		if (found_in_tree(word_to_search, tree)) {
-			printf("Found %s\n", word_to_search);
+			printf("true ");
 		} else {
-			printf("Not Found %s\n", word_to_search);
+			printf("false ");
 		}
 	}
 	fclose(file);
@@ -146,14 +149,14 @@ void use_tree_searching(struct Node* tree) {
 
 int main (int argc , char * argv []) {
 	struct Node* tree = buildTreeFromFile();
-	printf("Pre-Order:\n");
 	print_preorder(tree);
-	printf("\nIn-Order:\n");
+	printf("\n");
 	print_inorder(tree);
-	printf("\nPost-Order:\n");
+	printf("\n");
 	print_postorder(tree);
-	printf("\nSearching...\n");
+	printf("\n");
 	use_tree_searching(tree);
+	printf("\n");
 	destroy(tree);
 	return 0;
 }
