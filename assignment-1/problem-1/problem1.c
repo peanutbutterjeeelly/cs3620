@@ -32,8 +32,6 @@ void usage (char * prog);
 off_t fsize (const char * fileName);
 
 int main (int argc, char * argv[]) {
-	clock_t begin = clock();
-
 	// assume 4 byte key + 96 byte value
 	assert(sizeof(rec_t) == 100);
 
