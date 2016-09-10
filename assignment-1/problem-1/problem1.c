@@ -43,7 +43,11 @@ int main (int argc, char * argv[]) {
 
 	// input parameters
 	char * inFile, * outFile;
-	int c;
+	
+	// file I/O variables
+	int fileSize, numkeys;
+	int fd, r_ret, w_ret, c = 0;
+	
 	opterr = 0;
 	while ((c = getopt(argc, argv, "i:o:")) != -1) {
 		switch (c) {
@@ -58,23 +62,20 @@ int main (int argc, char * argv[]) {
 		}
 	}
 
-	// file I/O variables
-	int fd, r_ret, w_ret;
-
 	// get some helpful information
-	int fileSize = fsize(inFile);
-	int numkeys = fileSize/(KEYSIZE+VALUESIZE);	
+	fileSize = fsize(inFile);
+	numkeys = fileSize/(KEYSIZE+VALUESIZE);	
 
 	// allocate memory for array to hold records in
 	rec_t * recs = malloc(numkeys * sizeof(rec_t));
 	if (recs == NULL) {
-		perror("malloc failed");
+		fprintf(stderr, "Error: malloc(): %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	
 	// open up the file, check errors
 	if ((fd = open(inFile, O_RDONLY)) < 0) {
-		perror("open inFile");
+		fprintf(stderr, "Error: Cannot open file %s: %s\n", inFile, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -82,21 +83,25 @@ int main (int argc, char * argv[]) {
 	printf("Reading...\n");
 	r_ret = read (fd, recs, numkeys*sizeof(rec_t));
 	if (r_ret != (numkeys*sizeof(rec_t))) {
-		perror("read");
+		fprintf(stderr, "Error: Cannot read file %s: %s\n", inFile, strerror(errno));
 		exit(EXIT_FAILURE);
 	}	
 	close(fd);
 
 	// do the sorting...
 	printf("Sorting...\n");
-	qsort ((void *)recs, numkeys, sizeof(rec_t), compare);	
+	qsort (recs, numkeys, sizeof(rec_t), compare);	
 
 	// write the sorted data to output file
 	if ((fd = open(outFile, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU)) < 0) {
-		perror("open outFile");
+		fprintf(stderr, "Error: Cannot open file %s: %s\n", outFile, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	w_ret = write (fd, recs, numkeys*sizeof(rec_t));
+	if (w_ret != (numkeys*sizeof(rec_t))) {
+		fprintf(stderr, "Error: Cannot write to file %s: %s\n", outFile, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
 	close(fd);
 
 	// free the memory
