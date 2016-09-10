@@ -76,7 +76,6 @@ int main (int argc, char * argv[]) {
 	}
 
 	// read the binary records
-	printf("Reading...\n");
 	r_ret = read (fd, recs, numkeys*sizeof(rec_t));
 	if (r_ret != (numkeys*sizeof(rec_t))) {
 		fprintf(stderr, "Error: Cannot read file %s: %s\n", inFile, strerror(errno));
@@ -85,7 +84,6 @@ int main (int argc, char * argv[]) {
 	close(fd);
 
 	// do the sorting...
-	printf("Sorting...\n");
 	qsort (recs, numkeys, sizeof(rec_t), compare);	
 
 	// write the sorted data to output file
@@ -102,9 +100,7 @@ int main (int argc, char * argv[]) {
 
 	// free the memory
 	free(recs);	
-	clock_t end = clock();
-	printf("Time: %f\n", (double)(end-begin)/CLOCKS_PER_SEC);
-
+	
 	return 0;
 }
 
