@@ -17,10 +17,6 @@
 #include <time.h>
 #include "sort.h"
 
-#define BUFSIZE 1024
-#define KEYSIZE 4
-#define VALUESIZE 96
-
 /**
  * will return positive if key A is greater than key B,
  * and will return negative if key A is less than key B
@@ -64,7 +60,7 @@ int main (int argc, char * argv[]) {
 
 	// get some helpful information
 	fileSize = fsize(inFile);
-	numkeys = fileSize/(KEYSIZE+VALUESIZE);	
+	numkeys = fileSize/sizeof(rec_t);	
 
 	// allocate memory for array to hold records in
 	rec_t * recs = malloc(numkeys * sizeof(rec_t));
