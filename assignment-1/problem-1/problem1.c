@@ -14,7 +14,6 @@
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
-#include <time.h>
 #include "sort.h"
 
 /**
@@ -40,7 +39,7 @@ int main (int argc, char * argv[]) {
 	
 	// file I/O variables
 	int fileSize, numkeys;
-	int fd, r_ret, w_ret, c = 0;
+	int fd, r_ret, w_ret, c;
 	
 	opterr = 0;
 	while ((c = getopt(argc, argv, "i:o:")) != -1) {
@@ -68,7 +67,8 @@ int main (int argc, char * argv[]) {
 	}
 	
 	// open up the file, check errors
-	if ((fd = open(inFile, O_RDONLY)) < 0) {
+	fd = open(inFile, O_RDONLY);
+	if (fd < 0) {
 		fprintf(stderr, "Error: Cannot open file %s: %s\n", inFile, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
@@ -85,7 +85,8 @@ int main (int argc, char * argv[]) {
 	qsort (recs, numkeys, sizeof(rec_t), compare);	
 
 	// write the sorted data to output file
-	if ((fd = open(outFile, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU)) < 0) {
+	fd = open(outFile, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
+	if (fd < 0) {
 		fprintf(stderr, "Error: Cannot open file %s: %s\n", outFile, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
