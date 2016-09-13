@@ -40,7 +40,10 @@ int main (int argc, char * argv[]) {
 	// file I/O variables
 	int fileSize, numkeys;
 	int fd, r_ret, w_ret, c;
-	
+
+	if (argc != 2) {
+		usage(argv[0]);	
+	}
 	opterr = 0;
 	while ((c = getopt(argc, argv, "i:o:")) != -1) {
 		switch (c) {
@@ -104,7 +107,7 @@ int main (int argc, char * argv[]) {
 }
 
 void usage (char * prog) {
-	fprintf(stderr, "usage: %s <-i input file> <-o output file>\n", prog);
+	fprintf(stderr, "usage: %s -i input file -o output file\n", prog);
 	exit(1);
 }
 
