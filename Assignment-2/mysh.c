@@ -71,7 +71,10 @@ char * mysh_read (void) {
 	}
 }
 
-
+/**
+ * Uses the strtok() function to split the user input
+ * into corresponding individual commands to be run.
+ */
 char ** mysh_parse (char *input) {
 	int i = 0;
 	char *token;
