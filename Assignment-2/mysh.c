@@ -1,3 +1,12 @@
+/**
+ * X- simple commands (ls, pwd, wc, etc ...) work
+ * - need to work on getting the commands like cd, exit, etc to work. They are built
+ * into the language so need to be called differently, (chdir() for cd)
+ * - redirection
+ * - reading commands from the script file instead of user input
+ * - running the python program
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,8 +24,6 @@ char ** mysh_parse(char *);
 int mysh_run(char **);
 void print_error(void);
 
-const char ** functions = {"cd", "exit"};
-
 int main (int argc, char *argv[]) {
 		
 	mysh_loop ();
@@ -24,6 +31,10 @@ int main (int argc, char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
+/**
+ * This is the main shell loop that 
+ * launches other functions from it
+ */
 void mysh_loop (void) {
 	char *input, **args;
 	int status = 1;
@@ -32,14 +43,14 @@ void mysh_loop (void) {
 		printf("mysh> ");
 		input = mysh_read();
 		args = mysh_parse(input);
-		for (int i = 0; args[i] != NULL; i++) {
-			printf("%s\n", args[i]);
-		}
 		status = mysh_run(args);
-		printf("Status: %d\n", status);
 	} while (status);
 }
 
+/**
+ * This gets the user's input form stdin and 
+ * returns it in the buffer
+ */
 char * mysh_read (void) {
 	int c, i = 0;
 	char * buffer = malloc(sizeof(char)*BUFSIZE);
@@ -59,6 +70,7 @@ char * mysh_read (void) {
 		i++;
 	}
 }
+
 
 char ** mysh_parse (char *input) {
 	int i = 0;
@@ -93,9 +105,9 @@ int mysh_run (char **args) {
 		if (execvp(args[0], args) < 0) {
 			print_error();
 		}
-	} else if (pid < 0) {
+	} else if (pid < 0) { // error condition
 		print_error();
-	} else {
+	} else { // parent process
 		pid = wait(&status);
 	}
 	return 1;
