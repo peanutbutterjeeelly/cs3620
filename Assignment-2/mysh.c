@@ -1,6 +1,6 @@
 /**
  * X- simple commands (ls, pwd, wc, etc ...) work
- * - need to work on getting the commands like cd, exit, etc to work. They are built
+ * - need to work on getting the commands like cd(works), exit, etc to work. They are built
  * into the language so need to be called differently, (chdir() for cd)
  * - redirection
  * - reading commands from the script file instead of user input
@@ -22,6 +22,8 @@ void mysh_loop (void);
 char * mysh_read(void);
 char ** mysh_parse(char *);
 int mysh_run(char **);
+int mysh_cd(char **);
+int mysh_exit(void);
 void print_error(void);
 
 int main (int argc, char *argv[]) {
@@ -44,6 +46,7 @@ void mysh_loop (void) {
 		input = mysh_read();
 		args = mysh_parse(input);
 		status = mysh_run(args);
+		printf("Status: %d\n", status);
 	} while (status);
 }
 
@@ -103,11 +106,12 @@ int mysh_run (char **args) {
 	pid_t pid;
 	int status;
 
+	if (strcmp(args[0], "cd") == 0) return mysh_cd(args);
+	else if (strcmp(args[0], "exit") == 0) return mysh_exit();
+
 	pid = fork();
 	if (pid == 0) {	// child process
-		if (execvp(args[0], args) < 0) {
-			print_error();
-		}
+		if (execvp(args[0], args) < 0) print_error();
 	} else if (pid < 0) { // error condition
 		print_error();
 	} else { // parent process
@@ -116,6 +120,33 @@ int mysh_run (char **args) {
 	return 1;
 }
 
+/**
+ * Uses the built in chdir() function for the "cd" command
+ *
+ */
+int mysh_cd (char **args) {
+	if (args[1] == NULL) { // go to home directory
+		if (chdir (getenv("HOME")) != 0) print_error();
+	} else {
+		if (chdir (args[1]) != 0) print_error();
+	}
+	return 1;
+}
+
+
+/**
+ * returns 0 to break from the main loop
+ *
+ */
+int mysh_exit (void) {
+	printf("in mysh_exit()\n");
+	return 0;
+}
+
+/**
+ * Call this for every error condition
+ *
+ */
 void print_error (void) {
 	write (STDERR_FILENO, ERROR, strlen(ERROR));
 	exit(EXIT_FAILURE);
