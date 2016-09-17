@@ -1,12 +1,3 @@
-/**
- * X- simple commands (ls, pwd, wc, etc ...) work
- * - need to work on getting the commands like cd(works), exit(works), etc to work. They are built
- * into the language so need to be called differently, (chdir() for cd)
- * - redirection
- * - reading commands from the script file instead of user input
- * - running the python program
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,34 +5,11 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include "mysh.h"
 
 #define BUFSIZE 512
 #define ERROR "An error has occurred\n"
 #define DELIMITERS " "
-
-void mysh_loop (void);
-char * mysh_read(void);
-char ** mysh_parse(char *);
-int mysh_run(char **);
-int mysh_cd(char **);
-int mysh_exit(void);
-void print_error(void);
-
-FILE * inFile, * outFile;
-
-int main (int argc, char *argv[]) {
-
-	// check for batch file
-	if (argc == 2) {
-		inFile = fopen (argv[1], "r");
-		if (inFile == NULL) print_error();
-	} else inFile = stdin;
-	outFile = stdout;
-
-	mysh_loop ();
-
-	return EXIT_SUCCESS;
-}
 
 /**
  * This is the main shell loop that 
@@ -52,7 +20,7 @@ void mysh_loop (void) {
 	int status = 1;
 
 	do {
-		printf("mysh> ");
+		write(out_fd, "mysh> ", sizeof("mysh> "));
 		input = mysh_read();
 		args = mysh_parse(input);
 		status = mysh_run(args);
@@ -73,7 +41,7 @@ char * mysh_read (void) {
 	
 	// read input into the buffer
 	while (1) {
-		c = getc(inFile);
+		c = getchar();
 		if (c == EOF || c == '\n') {
 			buffer[i] = '\0';
 			return buffer;
