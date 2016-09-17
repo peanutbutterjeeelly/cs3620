@@ -12,4 +12,6 @@ int mysh_cd(char **);
 
 int mysh_exit(void);
 
+int redirect_out (char **);
+
 void print_error(void);

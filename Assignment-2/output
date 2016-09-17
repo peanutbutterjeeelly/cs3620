@@ -1,0 +1,16 @@
+total 192
+drwxrwxr-x 2 bryan bryan  4096 Sep 17 18:16 .
+drwxrwxr-x 6 bryan bryan  4096 Sep 17 09:38 ..
+-rw-rw-r-- 1 bryan bryan   300 Sep 17 09:37 batch.sh
+-rw-rw-r-- 1 bryan bryan   149 Sep 17 16:34 makefile
+-rw-rw-r-- 1 bryan bryan  2899 Sep 17 18:16 mysh.c
+-rw-r--r-- 1 bryan bryan 12288 Sep 17 16:14 .mysh.c.swp
+-rw-rw-r-- 1 bryan bryan   227 Sep 17 17:54 mysh.h
+-rw-rw-r-- 1 bryan bryan  4640 Sep 17 18:16 mysh.o
+-rw-rw-r-- 1 bryan bryan 13154 Sep 17 09:37 mysh.s
+-rw-rw-r-- 1 bryan bryan     0 Sep 17 18:16 output
+-rw-r--r-- 1 bryan bryan     0 Sep 17 18:07 output.txt
+-rw-rw-r-- 1 bryan bryan   153 Sep 17 09:37 p.py
+-rwxrwxr-x 1 bryan bryan 13840 Sep 17 18:16 shell
+-rw-rw-r-- 1 bryan bryan   586 Sep 17 16:28 shell.c
+-rw-rw-r-- 1 bryan bryan  1664 Sep 17 16:44 shell.o

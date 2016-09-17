@@ -20,7 +20,7 @@ void mysh_loop (void) {
 	int status = 1;
 
 	do {
-		write(out_fd, "mysh> ", sizeof("mysh> "));
+		write(STDOUT_FILENO, "mysh> ", sizeof("mysh> "));
 		input = mysh_read();
 		args = mysh_parse(input);
 		status = mysh_run(args);
@@ -72,6 +72,7 @@ char ** mysh_parse (char *input) {
 		token = strtok(NULL, DELIMITERS);
 	}
 	tokens[i] = NULL; // null terminate array
+
 	return tokens;
 }
 
@@ -82,10 +83,15 @@ char ** mysh_parse (char *input) {
  */
 int mysh_run (char **args) {
 	pid_t pid;
-	int status, out;
+	int status, stdout_fd;
+
+	if (redirect_out(args)) {
+		stdout_fd = dup(STDOUT_FILENO); // preserve stdout file # and replace with the 
+		dup2(out_fd, STDOUT_FILENO);	// redirection file descriptor
+	}
 
 	if (strcmp(args[0], "cd") == 0) return mysh_cd(args);
-	else if (strcmp(args[0], "exit") == 0) return mysh_exit();
+	else if (strcmp(args[0], "exit") == 0) return mysh_exit();	
 
 	pid = fork();
 	if (pid == 0) {	// child process
@@ -94,7 +100,9 @@ int mysh_run (char **args) {
 		print_error();
 	} else { // parent process
 		pid = wait(&status);
+		dup2(stdout_fd, STDOUT_FILENO); // restore stdout file #
 	}
+		
 	return 1;
 }
 
@@ -117,6 +125,23 @@ int mysh_cd (char **args) {
  *
  */
 int mysh_exit (void) {
+	return 0;
+}
+
+/**
+ * Determines if args contains '>' and if it does opens the 
+ * following file and returns 1 otherwise returns 0
+ */
+int redirect_out (char **args) {
+	for (int i = 0; args[i] != NULL; i++) {
+		if (args[i][0] == '>') {
+			if ((out_fd = open (args[i+1], O_CREAT|O_TRUNC|O_RDWR)) < 0) print_error();
+			for (int j = i; args[j+1] != NULL; j++) {
+				args[j] = NULL;
+			}
+			return 1;
+		}
+	}
 	return 0;
 }
 
