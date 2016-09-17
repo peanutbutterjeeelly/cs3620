@@ -1,6 +1,6 @@
 /**
  * X- simple commands (ls, pwd, wc, etc ...) work
- * - need to work on getting the commands like cd(works), exit, etc to work. They are built
+ * - need to work on getting the commands like cd(works), exit(works), etc to work. They are built
  * into the language so need to be called differently, (chdir() for cd)
  * - redirection
  * - reading commands from the script file instead of user input
@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -26,8 +27,17 @@ int mysh_cd(char **);
 int mysh_exit(void);
 void print_error(void);
 
+FILE * inFile, * outFile;
+
 int main (int argc, char *argv[]) {
-		
+
+	// check for batch file
+	if (argc == 2) {
+		inFile = fopen (argv[1], "r");
+		if (inFile == NULL) print_error();
+	} else inFile = stdin;
+	outFile = stdout;
+
 	mysh_loop ();
 
 	return EXIT_SUCCESS;
@@ -46,7 +56,6 @@ void mysh_loop (void) {
 		input = mysh_read();
 		args = mysh_parse(input);
 		status = mysh_run(args);
-		printf("Status: %d\n", status);
 	} while (status);
 }
 
@@ -57,13 +66,14 @@ void mysh_loop (void) {
 char * mysh_read (void) {
 	int c, i = 0;
 	char * buffer = malloc(sizeof(char)*BUFSIZE);
-	
+	// memory alloc error
 	if (buffer == NULL) {
 		print_error();
 	}
-
+	
+	// read input into the buffer
 	while (1) {
-		c = getchar();
+		c = getc(inFile);
 		if (c == EOF || c == '\n') {
 			buffer[i] = '\0';
 			return buffer;
@@ -82,7 +92,7 @@ char ** mysh_parse (char *input) {
 	int i = 0;
 	char *token;
 	char **tokens = malloc(BUFSIZE*sizeof(char*));
-
+	// memory alloc error
 	if (tokens == NULL) {
 		print_error();
 	}
@@ -93,7 +103,7 @@ char ** mysh_parse (char *input) {
 		i++;	
 		token = strtok(NULL, DELIMITERS);
 	}
-	tokens[i] = NULL;
+	tokens[i] = NULL; // null terminate array
 	return tokens;
 }
 
@@ -104,7 +114,7 @@ char ** mysh_parse (char *input) {
  */
 int mysh_run (char **args) {
 	pid_t pid;
-	int status;
+	int status, out;
 
 	if (strcmp(args[0], "cd") == 0) return mysh_cd(args);
 	else if (strcmp(args[0], "exit") == 0) return mysh_exit();
@@ -139,7 +149,6 @@ int mysh_cd (char **args) {
  *
  */
 int mysh_exit (void) {
-	printf("in mysh_exit()\n");
 	return 0;
 }
 
