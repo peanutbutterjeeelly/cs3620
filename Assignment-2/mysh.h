@@ -1,6 +1,6 @@
 static int in_fd, out_fd;
 
-void mysh_loop (void);
+void mysh_loop (int, char **);
 
 char * mysh_read(void);
 

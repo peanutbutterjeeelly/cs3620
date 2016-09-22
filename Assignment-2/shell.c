@@ -12,12 +12,8 @@
 #include "mysh.h"
 
 int main (int argc, char *argv[]) {
-	// check for batch file
-	if (argc == 2) {
-		if ((in_fd = open (argv[1], O_RDONLY)) < 0) print_error();
-	}
 
-	mysh_loop ();
+	mysh_loop (argc, argv);
 
 	return EXIT_SUCCESS;
 }
