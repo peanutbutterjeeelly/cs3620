@@ -4,7 +4,9 @@ mysh.c
 mysh.h
 mysh.o
 mysh.s
-ou
+output
+output.txt
+p1.py
 p.py
 shell
 shell.c
