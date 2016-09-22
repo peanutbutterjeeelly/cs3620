@@ -22,7 +22,7 @@ int out_fd;
 FILE * inFile;
 
 // mode flags
-int redirect_mode = 0, batch_mode = 0, python_mode = 0;
+int redirect_mode = 0, batch_mode = 0, python_mode = 0, background_mode = 0;
 
 /**
  * This is the main shell loop that 
@@ -67,7 +67,8 @@ char * mysh_read (void) {
 		buffer[length-1] = '\0';
 	}
 
-	check_python(buffer);	
+	check_python(buffer);
+	background(buffer);	
 
 	return buffer;
 }
@@ -123,7 +124,7 @@ int mysh_run (char **args) {
 	} else if (cpid < 0) { // error condition
 		print_error();
 	} else { // parent process
-		tcpid = wait(&status);
+		if (!background_mode) tcpid = wait(&status);
 		if (redirect_mode) {
 			dup2(stdout_fd, STDOUT_FILENO); // restore stdout file #
 			close (out_fd);
@@ -185,6 +186,16 @@ void check_python (char * input) {
 		strcpy (input, "python "); strcpy (input+strlen("python "), tmp);
 		python_mode = 1;		
 	}
+}
+
+int background (char * input) {
+	int length = strlen(input);
+	if (input[length-1] == '&') {
+		input[length-1] = '\0';
+		background_mode = 1;		
+		return 1;
+	}
+	return 0;
 }
 
 /**

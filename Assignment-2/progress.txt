@@ -1,5 +1,5 @@
 To Do: 
--> Background jobs
+-> (done) Background jobs
 -> white space ('mysh> ls > a', should work the same as 'mysh> ls>a')
 -> double check error messages are all good
 

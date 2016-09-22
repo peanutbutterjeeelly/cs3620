@@ -14,4 +14,6 @@ int redirect_out (char **);
 
 void check_python (char *);
 
+int background (char *);
+
 void print_error(void);
