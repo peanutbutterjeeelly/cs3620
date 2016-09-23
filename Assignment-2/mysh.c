@@ -177,17 +177,24 @@ int redirect_out (char ** args) {
  * and otherwise returns back the original input string
  */
 void check_python (char * input) {
-	int i, length = strlen(input);
+	int i, j, length = strlen(input);
 	char * tmp = malloc (length);
 
 	strcpy (tmp, input);
-	if (strcmp(tmp+strlen(tmp)-3, ".py") == 0) {
-		memset (input, 0, sizeof(input));
-		strcpy (input, "python "); strcpy (input+strlen("python "), tmp);
-		python_mode = 1;		
+	for (i = 0; i < length-2; i++) {
+		if (input[i] == '.' && input[i+1] == 'p' && input[i+2] == 'y') {
+			memset (input, 0, sizeof(input));			
+			// gets into a readable format 'python file.py arg1 arg2 ... '			
+			strcpy (input, "python "); strcpy (input+strlen("python "), tmp);
+			python_mode = 1;
+		}
 	}
 }
 
+/**
+ * Determines if there is a '&' in the input and returns 
+ * 1 if there is and returns 0 otherwise
+ */
 int background (char * input) {
 	int length = strlen(input);
 	if (input[length-1] == '&') {
