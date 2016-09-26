@@ -42,7 +42,7 @@ void mysh_loop (int argc, char ** argv) {
 
 	do {
 		if (!batch_mode) write(STDOUT_FILENO, "mysh> ", sizeof("mysh> "));
-		input = mysh_read();
+		if ((input = mysh_read()) == 0) continue;
 		args = mysh_parse(input);
 		status = mysh_run(args);
 	} while (status);
@@ -57,16 +57,20 @@ char * mysh_read (void) {
 
 	fflush(inFile);
 	memset (buffer, 0, sizeof(buffer));
-	fgets(buffer, sizeof(buffer), inFile);
+	while (1) {
+		if (i >= BUFSIZE) print_error();
+		c = fgetc(inFile);
+		if (c == EOF || c == '\n') {
+			buffer[i] = '\0';
+			break;
+		} else {
+			buffer[i] = c;
+			i++;
+		}
+	}
 
 	if (batch_mode) write (STDOUT_FILENO, buffer, sizeof(buffer));
 	
-	// remove the new line character	
-	length = strlen(buffer);
-	if (length > 0 && buffer[length-1] == '\n') {
-		buffer[length-1] = '\0';
-	}
-
 	check_python(buffer);
 	background(buffer);	
 
@@ -79,7 +83,7 @@ char * mysh_read (void) {
  */
 char ** mysh_parse (char *input) {
 	int i = 0;
-	char *token;
+	char *token, *tmp = malloc (BUFSIZE);
 
 	token = strtok(input, DELIMITERS);
 	while (token != NULL) {
@@ -107,7 +111,7 @@ int mysh_run (char **args) {
 		if ((out_fd = open (args[i+1], O_CREAT|O_TRUNC|O_WRONLY, 0666)) < 0) print_error();
 		redirect_mode = 1;
 		stdout_fd = dup(STDOUT_FILENO); // preserve stdout file # and replace with the 
-		dup2(out_fd, STDOUT_FILENO);	// redirection file descriptor
+		dup2(out_fd, STDOUT_FILENO);	// redirect stout to our output file
 	}
 
 	if (strcmp(args[0], "cd") == 0) return mysh_cd(args);
@@ -126,7 +130,7 @@ int mysh_run (char **args) {
 	} else { // parent process
 		if (!background_mode) tcpid = wait(&status);
 		if (redirect_mode) {
-			dup2(stdout_fd, STDOUT_FILENO); // restore stdout file #
+			dup2(stdout_fd, STDOUT_FILENO); // restore stdout
 			close (out_fd);
 		}
 	}
@@ -145,7 +149,6 @@ int mysh_cd (char ** args) {
 	}
 	return 1;
 }
-
 
 /**
  * returns 0 to break from the main loop

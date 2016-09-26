@@ -1,15 +1,1 @@
-batch.sh
-makefile
-mysh.c
-mysh.h
-mysh.o
-mysh.s
-output
-output.txt
-p1.py
-p.py
-shell
-shell.c
-shell.o
-test.c
-test.sh
+/home/bryan/Documents/cs3620/Assignment-2
