@@ -15,7 +15,8 @@
 
 // for reading/parsing the input
 char buffer[BUFSIZE];
-char * tokens[BUFSIZE];
+char tmp[BUFSIZE];
+char * tokens[BUFSIZE] = { 0 };
 int arg_count = 0;
 
 // for the shell's I/O
@@ -43,9 +44,8 @@ void mysh_loop (int argc, char ** argv) {
 
 	do {
 		if (!batch_mode) write(STDOUT_FILENO, "mysh> ", sizeof("mysh> "));
-		input = mysh_read();
-		if (strlen(input) == 0) continue;
-		args = mysh_parse(input);
+		if (strlen(input = mysh_read()) == 0) continue;
+		if ((args = mysh_parse(input)) == NULL) continue;
 		status = mysh_run(args);
 	} while (status);
 }
@@ -55,7 +55,7 @@ void mysh_loop (int argc, char ** argv) {
  * returns it in the buffer
  */
 char * mysh_read (void) {
-	int c, length, i = 0;
+	int c, length, i = 0, j = 0;
 
 	fflush(inFile);
 	memset (buffer, 0, sizeof(buffer));
@@ -72,10 +72,23 @@ char * mysh_read (void) {
 	}
 	if (batch_mode) write (STDOUT_FILENO, buffer, sizeof(buffer));
 
-	check_python(buffer);
-	background(buffer);	
+//ls>out
+//ls > out
+	memset(tmp, 0, sizeof(tmp));
+	for (i = 0, j = 0; i < strlen(buffer); i++, j++) {
+                if ((i < strlen(buffer)-2) && isalpha(buffer[i]) && buffer[i+1] == '>' && isalpha(buffer[i+2])) {
+                                tmp[j] = buffer[i]; tmp[j+1] = ' '; tmp[j+2] = buffer[i+1]; tmp[j+3] = ' '; tmp[j+4] = buffer[i+2];
+                                j += 4;
+				i += 2;
+                } else {
+                        tmp[j] = buffer[i];
+       		}
+	}
 
-	return buffer;
+	check_python(tmp);
+	background(tmp);	
+
+	return tmp;
 }
 
 /**
@@ -87,6 +100,7 @@ char ** mysh_parse (char *input) {
 	char *token;
 
 	token = strtok(input, DELIMITERS);
+	if (token == NULL) return NULL;
 	while (token != NULL) {
 		tokens[i] = token;
 		i++;	
