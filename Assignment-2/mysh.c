@@ -45,6 +45,8 @@ void mysh_loop (int argc, char ** argv) {
 	do {
 		if (!batch_mode) write(STDOUT_FILENO, "mysh> ", sizeof("mysh> "));
 		if (strlen(input = mysh_read()) == 0) continue;
+		check_python(input);
+		background(input);	
 		if ((args = mysh_parse(input)) == NULL) continue;
 		status = mysh_run(args);
 	} while (status);
@@ -60,7 +62,10 @@ char * mysh_read (void) {
 	fflush(inFile);
 	memset (buffer, 0, sizeof(buffer));
 	while (1) {
-		if (i >= BUFSIZE) print_error();
+		if (i >= BUFSIZE) {
+			print_error(); // input size check
+			exit(EXIT_FAILURE);		
+		}
 		c = fgetc(inFile);
 		if (c == EOF || c == '\n') {
 			buffer[i] = '\0';
@@ -71,9 +76,9 @@ char * mysh_read (void) {
 		}
 	}
 	if (batch_mode) write (STDOUT_FILENO, buffer, sizeof(buffer));
-
-//ls>out
-//ls > out
+	
+	// this looks at the possible 'command>output' scenario and forces spaces into it so that
+	// it goes to 'command > output'
 	memset(tmp, 0, sizeof(tmp));
 	for (i = 0, j = 0; i < strlen(buffer); i++, j++) {
                 if ((i < strlen(buffer)-2) && isalpha(buffer[i]) && buffer[i+1] == '>' && isalpha(buffer[i+2])) {
@@ -83,10 +88,7 @@ char * mysh_read (void) {
                 } else {
                         tmp[j] = buffer[i];
        		}
-	}
-
-	check_python(tmp);
-	background(tmp);	
+	}	
 
 	return tmp;
 }
@@ -139,6 +141,7 @@ int mysh_run (char **args) {
 	if (cpid == 0) {	// child process
 		execvp(args[0], args);
 		print_error();
+		exit(EXIT_FAILURE);
 	} else if (cpid < 0) { // error condition
 		print_error();
 	} else { // parent process
@@ -228,5 +231,4 @@ int background (char * input) {
  */
 void print_error (void) {
 	write (STDERR_FILENO, ERROR, strlen(ERROR));
-	exit(EXIT_FAILURE);
 }
