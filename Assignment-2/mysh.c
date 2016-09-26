@@ -119,7 +119,7 @@ char ** mysh_parse (char *input) {
  * 0 on error.
  */
 int mysh_run (char **args) {
-	pid_t cpid, tcpid;	// get current process PID
+	pid_t cpid, wpid;	// get current process PID
 	int i, status, stdout_fd;
 
 	if (redirect_out(args)) {
@@ -133,7 +133,7 @@ int mysh_run (char **args) {
 	if (strcmp(args[0], "cd") == 0) return mysh_cd(args);
 	else if (strcmp(args[0], "exit") == 0) return mysh_exit();
 	else if (strcmp(args[0], "wait") == 0) {
-		while ((tcpid = wait(&status)) > 0);
+		while ((wpid = wait(&status)) > 0);
 		return 1;
 	}
 
@@ -145,7 +145,7 @@ int mysh_run (char **args) {
 	} else if (cpid < 0) { // error condition
 		print_error();
 	} else { // parent process
-		if (!background_mode) tcpid = wait(&status);
+		if (!background_mode) wpid = wait(&status);
 		if (redirect_mode) {
 			dup2(stdout_fd, STDOUT_FILENO); // restore stdout
 			close (out_fd);
