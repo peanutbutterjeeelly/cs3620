@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <ctype.h>
 #include "mysh.h"
 
 #define BUFSIZE 512
@@ -42,7 +43,8 @@ void mysh_loop (int argc, char ** argv) {
 
 	do {
 		if (!batch_mode) write(STDOUT_FILENO, "mysh> ", sizeof("mysh> "));
-		if ((input = mysh_read()) == 0) continue;
+		input = mysh_read();
+		if (strlen(input) == 0) continue;
 		args = mysh_parse(input);
 		status = mysh_run(args);
 	} while (status);
@@ -68,9 +70,8 @@ char * mysh_read (void) {
 			i++;
 		}
 	}
-
 	if (batch_mode) write (STDOUT_FILENO, buffer, sizeof(buffer));
-	
+
 	check_python(buffer);
 	background(buffer);	
 
@@ -83,7 +84,7 @@ char * mysh_read (void) {
  */
 char ** mysh_parse (char *input) {
 	int i = 0;
-	char *token, *tmp = malloc (BUFSIZE);
+	char *token;
 
 	token = strtok(input, DELIMITERS);
 	while (token != NULL) {
@@ -93,7 +94,6 @@ char ** mysh_parse (char *input) {
 	}
 	arg_count = i;
 	tokens[arg_count] = NULL; // null terminate array
-
 	return tokens;
 }
 
