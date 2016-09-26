@@ -41,7 +41,7 @@ int main (int argc, char * argv[]) {
 	int fileSize, numkeys;
 	int fd, r_ret, w_ret, c;
 
-	if (argc != 2) {
+	if (argc != 4) {
 		usage(argv[0]);	
 	}
 	opterr = 0;
