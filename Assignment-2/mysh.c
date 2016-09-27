@@ -101,6 +101,8 @@ char ** mysh_parse (char *input) {
 	int i = 0;
 	char *token;
 
+	printf("%s\n", input);
+
 	token = strtok(input, DELIMITERS);
 	if (token == NULL) return NULL;
 	while (token != NULL) {
@@ -220,10 +222,14 @@ void check_python (char * input) {
  * 1 if there is and returns 0 otherwise
  */
 int background (char * input) {
-	int length = strlen(input);
-	if (input[length-1] == '&') {
+	int length = strlen(input), i = length;
+	while (input[i-1] == ' ') { i--; }
+	length = i;
+	printf("%d\n", length);	
+	if (input[length-1] == '&' && input[length-2] != '&') {
 		input[length-1] = '\0';
 		background_mode = 1;		
+		printf("%s\n", input);	
 		return 1;
 	}
 	return 0;
