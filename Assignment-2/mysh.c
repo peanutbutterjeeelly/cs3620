@@ -128,11 +128,12 @@ int mysh_run (char **args) {
 		redirect_mode = 1;
 		stdout_fd = dup(STDOUT_FILENO); // preserve stdout file # and replace with the 
 		dup2(out_fd, STDOUT_FILENO);	// redirect stout to our output file
-	}
+	} else redirect_mode = 0;
 
 	if (strcmp(args[0], "cd") == 0) return mysh_cd(args);
 	else if (strcmp(args[0], "exit") == 0) return mysh_exit();
 	else if (strcmp(args[0], "wait") == 0) {
+	// wait() keeps returning child pid on success until no more children
 		while ((wpid = wait(&status)) > 0);
 		return 1;
 	}
@@ -145,7 +146,8 @@ int mysh_run (char **args) {
 	} else if (cpid < 0) { // error condition
 		print_error();
 	} else { // parent process
-		if (!background_mode) wpid = wait(&status);
+		if (!background_mode) waitpid(cpid, &status, 0);
+		else background_mode = 0;	// reset the flag
 		if (redirect_mode) {
 			dup2(stdout_fd, STDOUT_FILENO); // restore stdout
 			close (out_fd);
@@ -200,11 +202,13 @@ void check_python (char * input) {
 	int i, j, length = strlen(input);
 	char * tmp = malloc (length);
 
+	python_mode = 0; // set initially to zero
+	
 	strcpy (tmp, input);
 	for (i = 0; i < length-2; i++) {
 		if (input[i] == '.' && input[i+1] == 'p' && input[i+2] == 'y') {
 			memset (input, 0, sizeof(input));			
-			// gets into a readable format 'python file.py arg1 arg2 ... '			
+			// gets into a readable format 'python file.py arg1 arg2 ... '		
 			strcpy (input, "python "); strcpy (input+strlen("python "), tmp);
 			python_mode = 1;
 		}
