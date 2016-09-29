@@ -1,0 +1,14 @@
+This project was completed by Bryan Ehlers and Sydney Garcia for the Operating
+Systems course at University of Iowa taught by Professor Omar Chowdhury. 
+
+The project consisted of developing a simple shell using the C language that 
+had the following features:
+-> Can run 'normal' commands (cd, ls, etc...)
+-> Can redirect the output to a file
+-> Can implement functions such as wait and cd by syscalls
+-> Can run a python program by calling 'program.py'
+
+Although we worked together and helped each other debug throughout, Bryan worked
+mostly on the parsing, wait/cd commands, and output redirection. Sydney worked
+mostly on the python program feature and setting up the structure to run the 
+normal commands through execvp() function.
