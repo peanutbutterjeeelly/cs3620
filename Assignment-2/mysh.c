@@ -7,7 +7,6 @@
 #include <sys/wait.h>
 #include <errno.h>
 #include <ctype.h>
-#include "mysh.h"
 
 #define BUFSIZE 512
 #define ERROR "An error has occurred\n"
@@ -26,11 +25,21 @@ FILE * inFile;
 // mode flags
 int redirect_mode = 0, batch_mode = 0, python_mode = 0, background_mode = 0;
 
+char * mysh_read(void);
+char ** mysh_parse(char *);
+int mysh_run(char **);
+int mysh_cd(char **);
+int mysh_exit(void);
+int redirect_out(char **);
+void check_python(char *);
+int background(char *);
+void print_error(void);
+
 /**
  * This is the main shell loop that 
  * launches other functions from it
  */
-void mysh_loop (int argc, char ** argv) {
+int main (int argc, char ** argv) {
 	char *input, **args;
 	int status = 1;
 
@@ -50,6 +59,7 @@ void mysh_loop (int argc, char ** argv) {
 		if ((args = mysh_parse(input)) == NULL) continue;
 		status = mysh_run(args);
 	} while (status);
+	return 0;
 }
 
 /**
@@ -100,8 +110,6 @@ char * mysh_read (void) {
 char ** mysh_parse (char *input) {
 	int i = 0;
 	char *token;
-
-	printf("%s\n", input);
 
 	token = strtok(input, DELIMITERS);
 	if (token == NULL) return NULL;
@@ -225,11 +233,9 @@ int background (char * input) {
 	int length = strlen(input), i = length;
 	while (input[i-1] == ' ') { i--; }
 	length = i;
-	printf("%d\n", length);	
 	if (input[length-1] == '&' && input[length-2] != '&') {
 		input[length-1] = '\0';
 		background_mode = 1;		
-		printf("%s\n", input);	
 		return 1;
 	}
 	return 0;
