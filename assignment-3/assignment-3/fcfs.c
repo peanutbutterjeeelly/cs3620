@@ -37,7 +37,7 @@ char ** parse (char *);
 int main (int argc, char ** argv) {
 	char * fileName, ** job_info;
 	double average_response_time = 0, average_turnaround_time = 0;
-	int length, num_jobs, arrival_index = 0, execution_index = 0;
+	int length, num_jobs, arrival_index = 0, execution_index = 0, current_time = 0;
 	struct proc * procs;
 
 	if (argc != 2) {
@@ -76,11 +76,10 @@ int main (int argc, char ** argv) {
 	#endif
 
 	procs[0].wait_time = 0; // in fcfs, the first job doesn't wait
+	current_time += procs[0].execution_time;	
 	for (int i = 1; i < num_jobs; i++) {
-		if (procs[i].arrival_time >= procs[i-1].execution_time)
-			procs[i].wait_time = 0;
-		else
-			procs[i].wait_time = procs[i-1].execution_time - procs[i].arrival_time;
+		procs[i].wait_time = current_time - procs[i].arrival_time;	
+		current_time += procs[i].execution_time;	
 	}
 
         #ifdef DEBUG
