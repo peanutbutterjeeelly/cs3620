@@ -20,13 +20,16 @@
 #define DEBUG 0
 
 struct proc {
+	int job_number;
 	int arrival_time;
 	int execution_time;
-	int job_number;
+	int wait_time;
+	int turnaround_time;
 } ;
 
 char * buf; // general purpose reading buffer, make sure to clear before use
 char * tokens[BUFSIZE];	// for parsing the job file
+int arr[BUFSIZE];
 
 void readInfoFile (const char *);
 char ** parse (char *);
@@ -34,11 +37,11 @@ char ** parse (char *);
 int main (int argc, char ** argv) {
 	char * fileName, ** job_info;
 	double average_response_time = 0, average_turnaround_time = 0;
-	int length, num_jobs, j = 0, k = 0;
-	int * execution_time, * arrival_time, * wait_time, * turnaround_time;
+	int length, num_jobs, arrival_index = 0, execution_index = 0;
+	struct proc * procs;
 
 	if (argc != 2) {
-		fprintf(stderr, "usage: ./prog <job file>\n");
+		fprintf(stderr, "error: Missing arguments---USAGE ./fcfs job_configuration_file\n");
 		exit(1);
 	} fileName = argv[1];
 
@@ -55,47 +58,45 @@ int main (int argc, char ** argv) {
 	printf("num_jobs = %d\n", num_jobs);
 	#endif
 
-	execution_time = malloc (num_jobs*sizeof(int));
-	arrival_time = malloc (num_jobs*sizeof(int));
-	wait_time = malloc (num_jobs*sizeof(int));
-	turnaround_time = malloc (num_jobs*sizeof(int));
+	procs = malloc (num_jobs*sizeof(struct proc));
 
 	for (int i = 1; i < length; i++) {
 		#ifdef DEBUG
 		printf("job_info[%d]: %s\n", i, job_info[i]);
 		#endif
-		if (i % 2 != 0) arrival_time[j++] = atoi(job_info[i]);
-		else execution_time[k++] = atoi(job_info[i]);
+		if (i % 2 != 0) procs[arrival_index++].arrival_time = atoi(job_info[i]);
+		else procs[execution_index++].execution_time = atoi(job_info[i]);
 	}
+
 	#ifdef DEBUG
 	for (int i = 0; i < num_jobs; i++) {
-		printf("arrival_time[%d]: %d\n", i, arrival_time[i]);
-		printf("execution_time[%d]: %d\n", i, execution_time[i]);
+		printf("arrival_time[%d]: %d\n", i, procs[i].arrival_time);
+		printf("execution_time[%d]: %d\n", i, procs[i].execution_time);
 	}
 	#endif
 
-	for (int i = 0; i < num_jobs; i++) {
-		wait_time[i] = 0;
-		for (int j = arrival_time[i]; j < i; j++) 
-			wait_time[i] += execution_time[j];
+	procs[0].wait_time = 0; // in fcfs, the first job doesn't wait
+	for (int i = 1; i < num_jobs; i++) {
+		if (procs[i].arrival_time >= procs[i-1].execution_time)
+			procs[i].wait_time = 0;
+		else
+			procs[i].wait_time = procs[i-1].execution_time - procs[i].arrival_time;
 	}
+
         #ifdef DEBUG
-        for (int i = 0; i < num_jobs; i++) printf("wait_time[%d]: %d\n", i, wait_time[i]);
+        for (int i = 0; i < num_jobs; i++) printf("wait_time[%d]: %d\n", i, procs[i].wait_time);
         #endif
 
 	for (int i = 0; i < num_jobs; i++) {
-		turnaround_time[i] = execution_time[i] + wait_time[i];
-		average_response_time += wait_time[i];
-		average_turnaround_time += turnaround_time[i];
+		procs[i].turnaround_time = procs[i].execution_time + procs[i].wait_time;
+		average_response_time += procs[i].wait_time;
+		average_turnaround_time += procs[i].turnaround_time;
 	}
 	average_turnaround_time /= num_jobs;
 	average_response_time /= num_jobs;
 	printf("%.5f\n%.5f\n", average_turnaround_time, average_response_time);
 
-	free(execution_time);
-	free(arrival_time);
-	free(wait_time);
-	free(turnaround_time);
+	free(procs);
 	free(buf);	
 	return 0;
 }
