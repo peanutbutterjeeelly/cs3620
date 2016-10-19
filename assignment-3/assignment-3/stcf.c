@@ -2,8 +2,7 @@
  * Assignment 3
  * Bryan Ehlers
  * UIowa Operating Systems
- * sjf.c
- *
+ * stcf.c
  */
 
 #include <stdio.h>
@@ -18,7 +17,7 @@
 
 #define BUFSIZE 1024
 #define DELIMITERS " \n"
-//#define DEBUG
+#define DEBUG
 
 void readInfoFile (const char *);
 char ** parse (char *);
@@ -26,6 +25,8 @@ char ** parse (char *);
 struct proc {
 	int job_number;
 	int arrival_time;
+	int start_time;
+	int time_remaining;
 	int execution_time;
 	int wait_time;
 	int turnaround_time;
@@ -37,11 +38,11 @@ char * tokens[BUFSIZE];
 int main (int argc, char ** argv) {
 	char * fileName, ** job_info;
 	double average_response_time = 0, average_turnaround_time = 0;
-	int length, num_jobs, arrival_index = 0, execution_index = 0, current_time = 0;
+	int length, num_jobs, arrival_index = 0, execution_index = 0, current_time = 0, done = 0;
 	struct proc * procs, temp, next;
 
 	if (argc != 2) {
-		fprintf(stderr, "error: Missing arguments---USAGE ./sjf job_configuration_file\n");
+		fprintf(stderr, "error: Missing arguments---USAGE ./stcf job_configuration_file\n");
 		exit(EXIT_FAILURE);
 	} fileName = argv[1];
 
@@ -61,12 +62,14 @@ int main (int argc, char ** argv) {
 		if (i % 2 != 0) procs[arrival_index++].arrival_time = atoi(job_info[i]);
 		else procs[execution_index++].execution_time = atoi(job_info[i]);
 	}
+	for (int i = 0; i < num_jobs; i++) 
+		procs[i].time_remaining = procs[i].execution_time;
 
 	#ifdef DEBUG
 	for (int i = 0; i < num_jobs; i++) {
 		printf("procs[%d].arrival_time: %d, procs[%d].execution_time: %d\n", i, procs[i].arrival_time, i, procs[i].execution_time); 
 	}
-	#endif
+	#endif	
 
 	// sort on execution time for jobs arriving at the same time, run shorter job first
 	for (int i = 1; i < num_jobs; i++) {		
@@ -76,46 +79,45 @@ int main (int argc, char ** argv) {
 			procs[i-1] = temp;
 		}
 	}
-	
+
 	#ifdef DEBUG
-	for (int i = 0; i < num_jobs; i++) printf("procs[%d].arrival_time = %d, procs[%d].execution_time = %d\n", i, procs[i].arrival_time, i, procs[i].execution_time);
+	for (int i = 0; i < num_jobs; i++) printf("procs[%d].arrival_time = %d, procs[%d].execution_time = %d, procs[%d].time_remaining = %d\n", i, procs[i].arrival_time, i, procs[i].execution_time, i, procs[i].time_remaining);
 	#endif
 
 	// first job to run is special case
 	procs[0].wait_time = 0;
-	current_time = procs[0].execution_time;
-	procs[0].wait_time = 0;
 	procs[0].turnaround_time = procs[0].execution_time;
 	average_response_time += procs[0].wait_time;
-	average_turnaround_time += procs[0].turnaround_time;	
-	for (int i = 1; i < num_jobs; i++) {
-		for (int j = i; j < num_jobs; j++) {
-			if (procs[j].arrival_time <= current_time)
-				next = procs[j];
-				if (next.execution_time < procs[i].execution_time) {
-					next = procs[j];
-					procs[j] = procs[i];
-					procs[i] = next;				
-				}
+	average_turnaround_time += procs[0].turnaround_time;
+	while (!done) {
+		for (int i = 1; i < num_jobs; i++) {		
+			if (procs[i-1].time_remaining - procs[i].arrival_time > procs[i].time_remaining) {
+				procs[i-1].time_remaining -= procs[i].arrival_time;				
+				current_time += (procs[i-1].execution_time - procs[i-1].time_remaining);			
+				next = procs[i];
+				procs[i] = procs[i-1];
+				procs[i-1] = next;
+			} else {
+				procs[i-1].time_remaining = 0;
+				current_time += procs[i-1].execution_time;
+			}			
+			#ifdef DEBUG
+			printf("current_time: %d, ", current_time);
+			printf("procs[%d].arrival_time = %d, procs[%d].execution_time = %d, procs[%d].time_remaining = %d\n", i-1, procs[i-1].arrival_time, i-1, procs[i-1].execution_time, i-1, procs[i-1].time_remaining);				
+			#endif
 		}
-		
-		#ifdef DEBUG
-		printf("procs[%d].arrival_time: %d, procs[%d].execution_time: %d\n", i, procs[i].arrival_time, i, procs[i].execution_time);
-		#endif
+		for (int i = 0; i < num_jobs; i++) {
+			if (procs[i].time_remaining != 0) {
+				done = 1;
+				break;
+			}
+		}
+	}
 
-		procs[i].wait_time = current_time - procs[i].arrival_time;
-		current_time += procs[i].execution_time;
-		#ifdef DEBUG
-		printf("current_time = %d\n", current_time);
-		#endif
-		procs[i].turnaround_time = current_time - procs[i].arrival_time;
-		average_response_time += procs[i].wait_time;
-		average_turnaround_time += procs[i].turnaround_time;
-	}	
-	average_turnaround_time /= num_jobs;	
-	average_response_time /= num_jobs;
-	printf("%.5f\n%.5f\n", average_turnaround_time, average_response_time);
-	
+	#ifdef DEBUG
+	for (int i = 0; i < num_jobs; i++) printf("procs[%d].arrival_time = %d, procs[%d].execution_time = %d, procs[%d].time_remaining = %d\n", i, procs[i].arrival_time, i, procs[i].execution_time, i, procs[i].time_remaining);
+	#endif
+
 	free(procs);
 	free(buf);
 	return 0;
