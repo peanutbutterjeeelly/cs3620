@@ -26,9 +26,10 @@ struct proc {
 	int job_number;
 	int arrival_time;
 	int start_time;
+	int finish_time;
 	int time_remaining;
 	int execution_time;
-	int wait_time;
+	int response_time;
 	int turnaround_time;
 } ;
 
@@ -38,7 +39,7 @@ char * tokens[BUFSIZE];
 int main (int argc, char ** argv) {
 	char * fileName, ** job_info;
 	double average_response_time = 0, average_turnaround_time = 0;
-	int length, num_jobs, arrival_index = 0, execution_index = 0, current_time = 0, done = 0;
+	int length, num_jobs, arrival_index = 0, execution_index = 0, current_time = 0, done = 0, first_run = 1;
 	struct proc * procs, temp, next;
 
 	if (argc != 2) {
@@ -85,38 +86,48 @@ int main (int argc, char ** argv) {
 	#endif
 
 	// first job to run is special case
-	procs[0].wait_time = 0;
-	procs[0].turnaround_time = procs[0].execution_time;
-	average_response_time += procs[0].wait_time;
-	average_turnaround_time += procs[0].turnaround_time;
+	procs[0].response_time = 0;
+	procs[0].start_time = 0;
 	while (!done) {
-		for (int i = 1; i < num_jobs; i++) {		
-			if (procs[i-1].time_remaining - procs[i].arrival_time > procs[i].time_remaining) {
-				procs[i-1].time_remaining -= procs[i].arrival_time;				
-				current_time += (procs[i-1].execution_time - procs[i-1].time_remaining);			
-				next = procs[i];
-				procs[i] = procs[i-1];
-				procs[i-1] = next;
-			} else {
-				procs[i-1].time_remaining = 0;
-				current_time += procs[i-1].execution_time;
-			}			
-			#ifdef DEBUG
-			printf("current_time: %d, ", current_time);
-			printf("procs[%d].arrival_time = %d, procs[%d].execution_time = %d, procs[%d].time_remaining = %d\n", i-1, procs[i-1].arrival_time, i-1, procs[i-1].execution_time, i-1, procs[i-1].time_remaining);				
-			#endif
+		if (first_run) {		
+			for (int i = 1; i < num_jobs; i++) {		
+				if (procs[i].arrival_time < (current_time+procs[i-1].time_remaining)) {				
+					procs[i-1].time_remaining = procs[i-1].time_remaining - (procs[i].arrival_time - current_time);
+					current_time += (procs[i-1].execution_time - procs[i-1].time_remaining);
+					procs[i].start_time = current_time;
+				} else {
+					procs[i-1].time_remaining = 0;
+					current_time += procs[i-1].execution_time;
+				}			
+				#ifdef DEBUG
+				printf("current_time: %d, ", current_time);
+				printf("procs[%d].arrival_time = %d, procs[%d].execution_time = %d, procs[%d].time_remaining = %d\n", i-1, procs[i-1].arrival_time, i-1, procs[i-1].execution_time, i-1, procs[i-1].time_remaining);				
+				#endif
+			}
+			first_run = 0;
+		}
+		
+		for (int i = num_jobs-1; i >= 0; i--) {
+			current_time += procs[i].time_remaining;
+			procs[i].time_remaining = 0;
+			procs[i].finish_time = current_time;
 		}
 		for (int i = 0; i < num_jobs; i++) {
-			if (procs[i].time_remaining != 0) {
-				done = 1;
-				break;
-			}
+			procs[i].turnaround_time = procs[i].finish_time - procs[i].arrival_time;
+			procs[i].response_time = procs[i].start_time - procs[i].arrival_time;
+			average_turnaround_time += procs[i].turnaround_time;
+			average_response_time += procs[i].response_time;
 		}
+		done = 1;
 	}
 
 	#ifdef DEBUG
-	for (int i = 0; i < num_jobs; i++) printf("procs[%d].arrival_time = %d, procs[%d].execution_time = %d, procs[%d].time_remaining = %d\n", i, procs[i].arrival_time, i, procs[i].execution_time, i, procs[i].time_remaining);
+	for (int i = 0; i < num_jobs; i++) printf("procs[%d].start_time = %d, procs[%d].arrival_time = %d, procs[%d].execution_time = %d, procs[%d].time_remaining = %d\n", i, procs[i].start_time, i, procs[i].arrival_time, i, procs[i].execution_time, i, procs[i].time_remaining);
 	#endif
+
+	average_turnaround_time /= num_jobs;	
+	average_response_time /= num_jobs;
+	printf("%.5f\n%.5f\n", average_turnaround_time, average_response_time);
 
 	free(procs);
 	free(buf);
