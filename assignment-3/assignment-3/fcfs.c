@@ -17,7 +17,7 @@
 
 #define BUFSIZE 1024
 #define DELIMITERS " \n"
-#define DEBUG 0
+//#define DEBUG
 
 struct proc {
 	int job_number;
