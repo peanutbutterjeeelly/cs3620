@@ -1,0 +1,11 @@
+gcc (GCC) 5.4.0 20160609
+
+To compile:
+gcc -o fcfs fcfs.c
+gcc -o sjf sjf.c
+gcc -o stcf stcf.c
+
+To run:
+./fcfs job.info.fcfs
+./sjf job.info.sjf
+./stcf job.info.stcf
