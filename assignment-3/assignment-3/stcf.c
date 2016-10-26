@@ -105,8 +105,6 @@ int main (int argc, char ** argv) {
 			if (procs[i].arrival_time <= time && procs[i].time_remaining > 0 && procs[i].time_remaining < procs[min_index].time_remaining)
 				min_index = i;
 		}
-
-		printf("min index: %d\n", min_index);
 		
 		if (procs[min_index].start_time == -1)	// this negative value signifies that process has no yet been started, it is set above
 			procs[min_index].start_time = time;
