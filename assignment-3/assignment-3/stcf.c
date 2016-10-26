@@ -30,19 +30,17 @@ struct proc {
 	int finish_time;
 	int time_remaining;
 	int execution_time;
-	int response_time;
-	int turnaround_time;
 	bool completed;
 } ;
 
-char * buf; // general purpose reading buffer
+char * buf;
 char * tokens[BUFSIZE];
 
 int main (int argc, char ** argv) {
 	char * fileName, ** job_info;
 	double average_response_time = 0, average_turnaround_time = 0;
-	int length, num_jobs, arrival_index = 0, execution_index = 0, current_time = 0, done = 0, first_run = 1;
-	struct proc * procs, temp, next;
+	int length, num_jobs, arrival_index = 0, execution_index = 0;
+	struct proc * procs, temp;
 
 	if (argc != 2) {
 		fprintf(stderr, "error: Missing arguments---USAGE ./stcf job_configuration_file\n");
@@ -56,21 +54,26 @@ int main (int argc, char ** argv) {
 	for (int i = 0; job_info[i] != NULL; i++) printf("job_info[%d]: %s\n", i, job_info[i]);
 	#endif
 
+	// find total # of running jobs
 	for (int i = 0; job_info[i] != NULL; i++) length = i;
 	length++;
 	num_jobs = (length-1)/2;
 
+	// relays job information into process structures
 	procs = malloc (num_jobs*sizeof(struct proc));
 	for (int i = 1; i < length; i++) {
 		if (i % 2 != 0) procs[arrival_index++].arrival_time = atoi(job_info[i]);
 		else procs[execution_index++].execution_time = atoi(job_info[i]);
 	}
+
+	// set initial conditions for all processes
 	for (int i = 0; i < num_jobs; i++) {
 		procs[i].time_remaining = procs[i].execution_time;
 		procs[i].job_number = i;
 		procs[i].completed = false;
 		procs[i].start_time = -1;
 	}
+
 	// sort on execution time for jobs arriving at the same time, run shorter job first
 	for (int i = 1; i < num_jobs; i++) {		
 		if (procs[i].arrival_time == procs[i-1].arrival_time && procs[i].execution_time < procs[i-1].execution_time) {
@@ -84,10 +87,12 @@ int main (int argc, char ** argv) {
 	for (int i = 0; i < num_jobs; i++) printf("procs[%d].arrival_time = %d, procs[%d].execution_time = %d, procs[%d].time_remaining = %d\n", i, procs[i].arrival_time, i, procs[i].execution_time, i, procs[i].time_remaining);
 	#endif
 
+	// gets the total running time
 	int total_execution_time = 0;
 	for (int i = 0; i < num_jobs; i++)
 		total_execution_time += procs[i].execution_time;
 
+	// shortest time to completion first algorithm
 	int min_index = 0;
 	for (int time = 0; time < total_execution_time; time++) {
 		min_index = 0;
@@ -114,45 +119,17 @@ int main (int argc, char ** argv) {
 		}
 	}
 	
-	
-
-
-
-
-
-/*
-	int min_index = num_jobs-1, remain = 0;
-	for (int time = 0; /*time < total_execution_time remain != num_jobs; time++) {
-		min_index = num_jobs-1;
-		printf("time: %d\n", time);
-		for (int i = 0; i < num_jobs; i++) {
-			if (procs[i].arrival_time <= time && procs[i].time_remaining > 0)
-				min_index = i;
-		}
-		printf("%d\n", min_index);
-		procs[min_index].time_remaining--;
-		printf("time_remaining: %d\n", procs[min_index].time_remaining);
-		printf("start_time: %d\n", procs[min_index].start_time);
-		if (procs[min_index].start_time == 0 && min_index != 0) 
-			procs[min_index].start_time = time;
-
-		if (procs[min_index].time_remaining == 0) {
-			printf("here");
-			remain++;
-			procs[min_index].completed = true;
-			procs[min_index].finish_time = time;
-			average_turnaround_time += procs[min_index].finish_time-procs[min_index].arrival_time;
-		}
-	}
-*/
+	// calculate the stats
 	for (int i = 0; i < num_jobs; i++) {
 		average_response_time += procs[i].start_time-procs[i].arrival_time;
 		average_turnaround_time += procs[i].finish_time - procs[i].arrival_time;
 	}
+
 	#ifdef DEBUG
 	for (int i = 0; i < num_jobs; i++) printf("procs[%d].start_time = %d, procs[%d].arrival_time = %d, procs[%d].execution_time = %d\nprocs[%d].finish_time = %d\n", i, procs[i].start_time, i, procs[i].arrival_time, i, procs[i].execution_time, i, procs[i].finish_time);
 	#endif
 
+	// finish the calculation
 	average_turnaround_time /= num_jobs;	
 	average_response_time /= num_jobs;
 	printf("%.5f\n%.5f\n", average_turnaround_time, average_response_time);
@@ -162,6 +139,10 @@ int main (int argc, char ** argv) {
 	return 0;
 }
 
+/**
+ * helper function to read the job information
+ * from the file
+ */
 void readInfoFile (const char * file_name) {
 	int fd, r_ret, fileSize, i = 0;
 	
@@ -183,6 +164,10 @@ void readInfoFile (const char * file_name) {
 	close (fd);
 }
 
+/**
+ * helper function to parse the job information
+ * file contents
+ */
 char ** parse (char * input) {
 	int i = 0;
 	char * token;	
