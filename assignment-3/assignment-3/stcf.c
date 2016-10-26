@@ -18,7 +18,7 @@
 
 #define BUFSIZE 1024
 #define DELIMITERS " \n"
-#define DEBUG
+//#define DEBUG
 
 void readInfoFile (const char *);
 char ** parse (char *);
