@@ -110,7 +110,7 @@ int main (int argc, char ** argv) {
 		procs[min_index].time_remaining--;
 		if (procs[min_index].time_remaining == 0) {
 			procs[min_index].completed = true;
-			procs[min_index].finish_time = time;		
+			procs[min_index].finish_time = time+1;		
 		}
 	}
 	
@@ -147,7 +147,7 @@ int main (int argc, char ** argv) {
 */
 	for (int i = 0; i < num_jobs; i++) {
 		average_response_time += procs[i].start_time-procs[i].arrival_time;
-		average_turnaround_time += procs[i].finish_time - procs[i].start_time;
+		average_turnaround_time += procs[i].finish_time - procs[i].arrival_time;
 	}
 	#ifdef DEBUG
 	for (int i = 0; i < num_jobs; i++) printf("procs[%d].start_time = %d, procs[%d].arrival_time = %d, procs[%d].execution_time = %d\nprocs[%d].finish_time = %d\n", i, procs[i].start_time, i, procs[i].arrival_time, i, procs[i].execution_time, i, procs[i].finish_time);
