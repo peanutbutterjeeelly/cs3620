@@ -1,0 +1,9 @@
+1. 
+As the address space increases, the size of the page table also increases proportionally. A 2MB address space will have a page table twice as large as a 1MB address space would have.
+
+As the page size increases, the size of the page table has an inverse proportional relationship. A 2KB page size will have a page table that is half the size of a 1KB page size.
+
+We shouldn't just use really big pages in general because internal segmentation will become an issue. That is where segmentation will occur within each of the pages as they grow in size.
+
+2.
+
