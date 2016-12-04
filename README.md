@@ -10,14 +10,19 @@ Develop a big integer multiplication implementation similar to that used in Java
 Implement the typical binary tree operations in C.  
 
 ## Assignment 2  
+Develop a basic shell application.  
 
 ## Assignment 3  
+Write a scheduler that uses the following three algorithms: first come first serve, shortest job first, and shortest time to completion first. Report the response time and turnaround time metrics using the test files provided.  
 
 ## Assignment 4  
+Use the paging-linear-translate.py to answer the questions about memory translation.  
 
 ## Assignment 5  
+Design a multi-threaded solution to find the nearest neighbors to each of the data points in the query file compared to each of the points in the data file. Report the time taken.  
 
 ## Assignment 6  
+Implement a password manager program using the OpenSSL encryption library.  
 
 This is a home for my operating systems assignments for the course at the University of Iowa as taught by Omar Chowdhury.  
 
