@@ -7,7 +7,7 @@
 # include <assert.h> 
 # include "util.h" 
 
-//# define DEBUG
+# define DEBUG
 
 //LLEntry * head ; 
 LLEntry * node ;
@@ -56,7 +56,7 @@ int register_user(unsigned char *user, unsigned char *password){
         //write the body
         //Returns OKAY or ERROR
 	// STEP 1: use the functions username_okay and password_okay to check whether the username and password respect the constraints 
-	if (!username_okay(user) || !password_okay(password))		
+	if (username_okay(user)!=OKAY || password_okay(password)!=OKAY)		
 		return ERROR;
 
 	// STEP 2: Use the find_user function to obtain a node to the linked list 
@@ -71,7 +71,7 @@ int register_user(unsigned char *user, unsigned char *password){
 	unsigned char digest[SHA512_DIGEST_LENGTH]; 
 	SHA512_CTX ctx;
 	SHA512_Init(&ctx);
-	SHA512_Update(&ctx, password, strlen(pass));
+	SHA512_Update(&ctx, password, strlen(password));
 	assert(getRandBytes(salt, 32) != -1 ) ; 
 	SHA512_Update(&ctx, salt, 32);
 	SHA512_Final(digest, &ctx);
@@ -80,7 +80,7 @@ int register_user(unsigned char *user, unsigned char *password){
 
 	for (int i = 0; i < SHA512_DIGEST_LENGTH; i++)
 	    sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
- 
+
 	#ifdef DEBUG
 	printf("SHA512 hash value: %s\n", mdString);
 	printf("LEN: %d\n",SHA512_DIGEST_LENGTH); 
@@ -97,17 +97,20 @@ int register_user(unsigned char *user, unsigned char *password){
 
 
 int delete_user(unsigned char *user, unsigned char * password){
+	LLEntry * userNode;
+	char * mdString;
+
         //write the body
         //Returns OKAY or ERROR
 	// STEP 1: use the functions username_okay and password_okay to check whether the username and password respect the constraints 
-	if (!username_okay(user) || !password_okay(password))		
+	if (username_okay(user)!=OKAY || password_okay(password)!=OKAY)		
 		return ERROR;
 
 	// STEP 2: Use the find_user function to obtain a node to the linked list 
 	// If the node returned by find_user is null that means the user does not exist
 	// In which case print the error message "Error: User does not exist\n" and return ERROR  
-
-	if (find_user(user) == NULL) {
+	userNode = find_user(user);	
+	if (user == NULL) {
 		printf("Error: User does not exist\n");
 		return ERROR;
 	}	
@@ -115,9 +118,35 @@ int delete_user(unsigned char *user, unsigned char * password){
 	//STEP 3: Based on the stored salt and entered password calculate a hashed password and then check whether the calculated 
 	//hashed password matches with the stored one
 	//If the password does not match print the error message "Error: User password does not match\n" and return ERROR 
-		
+	unsigned char digest[SHA512_DIGEST_LENGTH]; 
+	SHA512_CTX ctx;
+	SHA512_Init(&ctx);
+	SHA512_Update(&ctx, password, strlen(password));
+	SHA512_Update(&ctx, userNode->salt, 32);
+	SHA512_Final(digest, &ctx);
+
+	mdString = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
+
+	for (int i = 0; i < SHA512_DIGEST_LENGTH; i++)
+	    sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
+
+	#ifdef DEBUG
+	printf("mdString:\n");
+	for (int i = 0; i < strlen(mdString); i++) {
+		printf("%u ", hex_digit_to_decimal(mdString[i]));
+	}
+	printf("stored:\n");
+	for (int i = 0; i < strlen(userNode->hashed_password); i++) {
+		printf("%u ", hex_digit_to_decimal(userNode->hashed_password[i]));
+	}
+	printf("userNode->username : %s\n", userNode->user_name);
+	#endif
+
+	if (binary_compare(userNode->hashed_password, sizeof(userNode->hashed_password), mdString, sizeof(mdString))==-1)
+		return ERROR;
 
 	//STEP 4: Then call the delete_node with the user name to delete the user entry 
+	delete_node (user);
 
         printf("DEBUG: Called delete_user function\n");
         return OKAY ;
@@ -129,7 +158,7 @@ int match_user(unsigned char *user, unsigned char * password){
         //write the body
         //Returns OKAY or ERROR
 	// STEP 1: use the functions username_okay and password_okay to check whether the username and password respect the constraints 
-	if (!username_okay(user) || !password_okay(password))		
+	if (username_okay(user)!=OKAY || password_okay(password)!=OKAY)		
 		return ERROR;
 
 	// STEP 2: Use the find_user function to obtain a node to the linked list 
@@ -153,7 +182,7 @@ int change_user_password(unsigned char *user, unsigned char * password_current, 
         //write the body
         //Returns OKAY or ERROR
 	// STEP 1: use the functions username_okay and password_okay to check whether the username and password respect the constraints 
-	if (!username_okay(user) || !password_okay(password_current))		
+	if (username_okay(user)!=OKAY || password_okay(password_current)!=OKAY)		
 		return ERROR;
 
 	// STEP 2: Use the find_user function to obtain a node to the linked list 
@@ -288,6 +317,7 @@ void process_option(int option){
 }
 
 
+
 int main(int argc, char *argv[]){
 
 	if(argc != 2){
@@ -315,7 +345,7 @@ int main(int argc, char *argv[]){
 		scanf("%d",&option);
 		if(option==5)break; 
 		process_option(option); 
-		dump_structure();
+		//dump_structure();
 	}
 	dump_to_password_file( pFile) ;
 
