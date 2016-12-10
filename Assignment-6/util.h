@@ -89,7 +89,6 @@ unsigned char hex_digit_to_decimal(unsigned char ch){
         }
 }
 
-
 //It is required for both hex_string and  byte_array to be allocated with proper space ...
 int hex_array_to_byte_array(unsigned char * hex_string, unsigned char * byte_array)
 {
@@ -128,7 +127,6 @@ int byte_array_to_hex_array(unsigned char * byte_array, unsigned int num_bytes, 
         }
         hex_string[2*i] = (unsigned char)0 ;
 }
-
 
 // Linked list data structure for storing the password file ... 
 struct passwordEntry

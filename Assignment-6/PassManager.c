@@ -77,6 +77,8 @@ int register_user(unsigned char *user, unsigned char *password){
 	SHA512_Final(digest, &ctx);
 
 	mdString = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
+	unsigned char * binarymdString;
+	binarymdString = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
 
 	for (int i = 0; i < SHA512_DIGEST_LENGTH; i++)
 	    sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
@@ -88,7 +90,8 @@ int register_user(unsigned char *user, unsigned char *password){
 	//STEP 4: Generate the hashed password based on password and the salt 
 
 	//STEP 5: Call the push_back function to add the user to the list 
-	push_back(user, salt, mdString);
+	hex_array_to_byte_array(mdString,binarymdString);
+	push_back(user, salt, binarymdString);
 
         printf("DEBUG: Called register_user function\n");
         return OKAY ;
@@ -99,6 +102,7 @@ int register_user(unsigned char *user, unsigned char *password){
 int delete_user(unsigned char *user, unsigned char * password){
 	LLEntry * userNode;
 	char * mdString;
+	unsigned char * binarymdString;
 
         //write the body
         //Returns OKAY or ERROR
@@ -126,23 +130,53 @@ int delete_user(unsigned char *user, unsigned char * password){
 	SHA512_Final(digest, &ctx);
 
 	mdString = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
+	binarymdString = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
 
 	for (int i = 0; i < SHA512_DIGEST_LENGTH; i++)
 	    sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
 
-	#ifdef DEBUG
-	printf("mdString:\n");
-	for (int i = 0; i < strlen(mdString); i++) {
-		printf("%u ", hex_digit_to_decimal(mdString[i]));
-	}
-	printf("stored:\n");
-	for (int i = 0; i < strlen(userNode->hashed_password); i++) {
-		printf("%u ", hex_digit_to_decimal(userNode->hashed_password[i]));
-	}
-	printf("userNode->username : %s\n", userNode->user_name);
-	#endif
+///////////////////////////
 
-	if (binary_compare(userNode->hashed_password, sizeof(userNode->hashed_password), mdString, sizeof(mdString))==-1)
+	unsigned char buff[1024] ; 
+	unsigned char uname[MAX_USER_NAME_SIZE];
+	unsigned char slt[SALT_SIZE*2+1] ;  //hexadecimal representation 
+	unsigned char hPassword[HASHED_PASSWORD_SIZE*2+1] ; //hexadecimal representation 
+	unsigned char Binaryslt[SALT_SIZE] ;  //BINARY representation 
+	unsigned char BinaryhPassword[HASHED_PASSWORD_SIZE] ; //BINARY representation 
+
+	FILE * fin = fopen ("sample_password_file", "r");
+
+	// search the password file for the user we want to delete
+	unsigned char *ptr ;
+	while(fscanf(fin, "%s", buff)==1)
+	{
+		int counter = 0 ; 
+		ptr = strtok(buff, ":"); 
+		while(ptr){
+			if(counter==0)strcpy(uname, ptr);
+			else if(counter==1)strcpy(slt, ptr);
+			else if(counter==2)strcpy(hPassword, ptr);
+			else assert(0);
+			++counter; 		
+			ptr = strtok(NULL, ":"); 
+		}
+		assert( hex_array_to_byte_array(slt,Binaryslt) == SALT_SIZE); 
+		assert( hex_array_to_byte_array(hPassword,BinaryhPassword) == HASHED_PASSWORD_SIZE) ; 
+
+		if (strcmp(uname,user)==0) break; // found user we're looking for so break
+	}
+
+		printf("\nBinary salt: ");
+		for (int i=0;i<SALT_SIZE;i++) printf("%x ",Binaryslt[i]);
+		printf("\nBinary hashed password: ");
+		for (int i=0;i<HASHED_PASSWORD_SIZE;i++) printf("%x ",BinaryhPassword[i]);
+		printf("\nmdString: ");
+		hex_array_to_byte_array(mdString,binarymdString);
+		for (int i=0;i<HASHED_PASSWORD_SIZE;i++) printf("%x ", binarymdString[i]);
+
+//////////////////////////////
+
+	if (binary_compare(binarymdString, HASHED_PASSWORD_SIZE, BinaryhPassword, HASHED_PASSWORD_SIZE)==-1)
 		return ERROR;
 
 	//STEP 4: Then call the delete_node with the user name to delete the user entry 
