@@ -7,10 +7,7 @@
 # include <assert.h> 
 # include "util.h" 
 
-# define DEBUG
-
-//LLEntry * head ; 
-LLEntry * node ;
+//# define DEBUG
 
 char pFile[1024] ; 
 
@@ -26,7 +23,6 @@ void dump_to_password_file(char *fileName)
 	fclose(fp); 
 }
 
-
 void print_console_message()
 {
 	
@@ -34,40 +30,20 @@ void print_console_message()
 	printf("The integer option maps to the following commands:\n(1) register a user account\n(2) delete a user account\n(3) user login\n(4) change an account password\n(5) quit console\n\n\n");
 }
 
-
-
-
-/*IMPLEMENT THE FOLLOWING FUNCTIONS */
-
-/*
-DO NOT FORGET TO CHECK WHETHER THE USERNAME AND THE PASSWORD ARE VALID IN THE
-BEGINNING OF EACH FUNCTION. THAT IS CHECK WHETHER THEY ONLY CONTAIN
-CHARACTERS FROM THE CLASSES OF CHARACTERS ALLOWED. CONSULT THE PROJECT DESCRIPTION
-TO FIND THE VALID CHARACTER CLASSES. 
-*/
-
-
 int register_user(unsigned char *user, unsigned char *password){
-	char pass[1024];
-	char salt[32];
+	char salt[32]; 
 	char * mdString;
+	unsigned char * binary;	
 
 	printf("Registering user %s\n",user); 
-        //write the body
-        //Returns OKAY or ERROR
-	// STEP 1: use the functions username_okay and password_okay to check whether the username and password respect the constraints 
 	if (username_okay(user)!=OKAY || password_okay(password)!=OKAY)		
 		return ERROR;
 
-	// STEP 2: Use the find_user function to obtain a node to the linked list 
-	// If the node returned by find_user is not null that means the user already exists
-	// In which case print the error message "Error: User already exists\n" and return ERROR  
 	if (find_user(user) != NULL) {
 		printf("Error: User already exists\n");
 		return ERROR;
 	}
 
-	//STEP 3: Generate a random salt of size SALT_SIZE using the getRandBytes function
 	unsigned char digest[SHA512_DIGEST_LENGTH]; 
 	SHA512_CTX ctx;
 	SHA512_Init(&ctx);
@@ -78,7 +54,7 @@ int register_user(unsigned char *user, unsigned char *password){
 
 	mdString = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
 	unsigned char * binarymdString;
-	binarymdString = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
+	binary = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
 
 	for (int i = 0; i < SHA512_DIGEST_LENGTH; i++)
 	    sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
@@ -86,42 +62,31 @@ int register_user(unsigned char *user, unsigned char *password){
 	#ifdef DEBUG
 	printf("SHA512 hash value: %s\n", mdString);
 	printf("LEN: %d\n",SHA512_DIGEST_LENGTH); 
-	#endif	
-	//STEP 4: Generate the hashed password based on password and the salt 
+	#endif
+	
+	hex_array_to_byte_array(mdString,binary);
+	push_back(user, salt, binary);
 
-	//STEP 5: Call the push_back function to add the user to the list 
-	hex_array_to_byte_array(mdString,binarymdString);
-	push_back(user, salt, binarymdString);
-
-        printf("DEBUG: Called register_user function\n");
-        return OKAY ;
+	#ifdef DEBUG        
+	printf("DEBUG: Called register_user function\n");
+	#endif        
+	return OKAY ;
 }
 
-
-
-int delete_user(unsigned char *user, unsigned char * password){
+int match_user(unsigned char *user, unsigned char * password){
 	LLEntry * userNode;
 	char * mdString;
-	unsigned char * binarymdString;
+	unsigned char * binary;
 
-        //write the body
-        //Returns OKAY or ERROR
-	// STEP 1: use the functions username_okay and password_okay to check whether the username and password respect the constraints 
 	if (username_okay(user)!=OKAY || password_okay(password)!=OKAY)		
 		return ERROR;
 
-	// STEP 2: Use the find_user function to obtain a node to the linked list 
-	// If the node returned by find_user is null that means the user does not exist
-	// In which case print the error message "Error: User does not exist\n" and return ERROR  
-	userNode = find_user(user);	
-	if (user == NULL) {
+	userNode = find_user(user);
+	if (userNode == NULL) {
 		printf("Error: User does not exist\n");
 		return ERROR;
-	}	
+	}
 
-	//STEP 3: Based on the stored salt and entered password calculate a hashed password and then check whether the calculated 
-	//hashed password matches with the stored one
-	//If the password does not match print the error message "Error: User password does not match\n" and return ERROR 
 	unsigned char digest[SHA512_DIGEST_LENGTH]; 
 	SHA512_CTX ctx;
 	SHA512_Init(&ctx);
@@ -130,118 +95,97 @@ int delete_user(unsigned char *user, unsigned char * password){
 	SHA512_Final(digest, &ctx);
 
 	mdString = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
-	binarymdString = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
+	binary = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
 
 	for (int i = 0; i < SHA512_DIGEST_LENGTH; i++)
 	    sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
 
-///////////////////////////
+	hex_array_to_byte_array(mdString, binary);
 
-	unsigned char buff[1024] ; 
-	unsigned char uname[MAX_USER_NAME_SIZE];
-	unsigned char slt[SALT_SIZE*2+1] ;  //hexadecimal representation 
-	unsigned char hPassword[HASHED_PASSWORD_SIZE*2+1] ; //hexadecimal representation 
-	unsigned char Binaryslt[SALT_SIZE] ;  //BINARY representation 
-	unsigned char BinaryhPassword[HASHED_PASSWORD_SIZE] ; //BINARY representation 
+	#ifdef DEBUG
+	printf("\nnon-binary: ");
+	for(int i=0;i<SHA512_DIGEST_LENGTH;i++) printf("%x ",mdString[i]);
+	printf("\nbinary: ");	
+	for(int i=0;i<HASHED_PASSWORD_SIZE;i++) printf("%x ",binary[i]);
+	printf("\n");	
+	for(int i=0;i<HASHED_PASSWORD_SIZE;i++) printf("%x ",userNode->hashed_password[i]);
+	#endif
 
-	FILE * fin = fopen ("sample_password_file", "r");
-
-	// search the password file for the user we want to delete
-	unsigned char *ptr ;
-	while(fscanf(fin, "%s", buff)==1)
-	{
-		int counter = 0 ; 
-		ptr = strtok(buff, ":"); 
-		while(ptr){
-			if(counter==0)strcpy(uname, ptr);
-			else if(counter==1)strcpy(slt, ptr);
-			else if(counter==2)strcpy(hPassword, ptr);
-			else assert(0);
-			++counter; 		
-			ptr = strtok(NULL, ":"); 
-		}
-		assert( hex_array_to_byte_array(slt,Binaryslt) == SALT_SIZE); 
-		assert( hex_array_to_byte_array(hPassword,BinaryhPassword) == HASHED_PASSWORD_SIZE) ; 
-
-		if (strcmp(uname,user)==0) break; // found user we're looking for so break
+	if (binary_compare(binary, HASHED_PASSWORD_SIZE, userNode->hashed_password, HASHED_PASSWORD_SIZE)==-1) {
+		printf("Error: User password does not match\n");
+		return ERROR;
 	}
 
-		printf("\nBinary salt: ");
-		for (int i=0;i<SALT_SIZE;i++) printf("%x ",Binaryslt[i]);
-		printf("\nBinary hashed password: ");
-		for (int i=0;i<HASHED_PASSWORD_SIZE;i++) printf("%x ",BinaryhPassword[i]);
-		printf("\nmdString: ");
-		hex_array_to_byte_array(mdString,binarymdString);
-		for (int i=0;i<HASHED_PASSWORD_SIZE;i++) printf("%x ", binarymdString[i]);
-
-//////////////////////////////
-
-	if (binary_compare(binarymdString, HASHED_PASSWORD_SIZE, BinaryhPassword, HASHED_PASSWORD_SIZE)==-1)
-		return ERROR;
-
-	//STEP 4: Then call the delete_node with the user name to delete the user entry 
-	delete_node (user);
-
-        printf("DEBUG: Called delete_user function\n");
+        #ifdef DEBUG
+	printf("DEBUG: Called login function\n");
+	#endif
         return OKAY ;
 }
 
+int delete_user(unsigned char *user, unsigned char * password){
+	LLEntry * userNode;
+	char * mdString;
+	unsigned char * binarymdString;
 
-
-int match_user(unsigned char *user, unsigned char * password){
-        //write the body
-        //Returns OKAY or ERROR
-	// STEP 1: use the functions username_okay and password_okay to check whether the username and password respect the constraints 
 	if (username_okay(user)!=OKAY || password_okay(password)!=OKAY)		
 		return ERROR;
-
-	// STEP 2: Use the find_user function to obtain a node to the linked list 
-	// If the node returned by find_user is null that means the user does not exist
-	// In which case print the error message "Error: User does not exist\n" and return ERROR  
-	if (find_user(user) == NULL) {
+ 
+	userNode = find_user(user);	
+	if (user == NULL) {
 		printf("Error: User does not exist\n");
 		return ERROR;
-	}
+	}	
 
-	//STEP 3: Based on the stored salt and entered password calculate a hashed password and then check whether the calculated 
-	//hashed password matches with the stored one
-	//If the password does not match print the error message "Error: User password does not match\n" and return ERROR 
+	if (match_user(user, password)==ERROR)
+		return ERROR;
 
+	delete_node (user);
 
-        printf("DEBUG: Called login function\n");
+	#ifdef DEBUG        
+	printf("DEBUG: Called delete_user function\n");
+	#endif
         return OKAY ;
 }
 
 int change_user_password(unsigned char *user, unsigned char * password_current, unsigned char * password_new){
-        //write the body
-        //Returns OKAY or ERROR
-	// STEP 1: use the functions username_okay and password_okay to check whether the username and password respect the constraints 
+	char pass[1024];
+	char salt[32];
+	char * mdString;
+	unsigned char * binarymdString;
+        
 	if (username_okay(user)!=OKAY || password_okay(password_current)!=OKAY)		
 		return ERROR;
 
-	// STEP 2: Use the find_user function to obtain a node to the linked list 
-	// If the node returned by find_user is null that means the user does not exist
-	// In which case print the error message "Error: User does not exist\n" and return ERROR  
 	if (find_user(user) == NULL) {
 		printf("Error: User does not exist\n");
 		return ERROR;
 	}
 
-	//STEP 3: Based on the stored salt and entered password calculate a hashed password and then check whether the calculated 
-	//hashed password matches with the stored one
-	//If the password does not match print the error message "Error: User password does not match\n" and return ERROR 
+	if (match_user(user, password_current)==ERROR)
+		return ERROR;
+
+	unsigned char digest[SHA512_DIGEST_LENGTH]; 
+	SHA512_CTX ctx;
+	SHA512_Init(&ctx);
+	SHA512_Update(&ctx, password_new, strlen(password_new));
+	assert(getRandBytes(salt, 32) != -1 ) ; 
+	SHA512_Update(&ctx, salt, 32);
+	SHA512_Final(digest, &ctx);
+
+	mdString = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
+	binarymdString = malloc((SHA512_DIGEST_LENGTH*2 + 1)*sizeof(char));
+
+	for (int i = 0; i < SHA512_DIGEST_LENGTH; i++)
+	    sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
 	
+	hex_array_to_byte_array(mdString, binarymdString);
+	update_user_password (user, salt, binarymdString);
 
-	// STEP 4: Create a new random salt for the new password and obtain the hashed password then call the update_user_password function to update 
-	// the password entry for the function 
-
-        printf("DEBUG: Called change_user_password function\n");
+        #ifdef DEBUG
+	printf("DEBUG: Called change_user_password function\n");
+	#endif
         return OKAY ;
 }
-
-/*IMPLEMENT THE ABOVE FUNCTIONS*/
-
-
 
 void process_option(int option){
 	switch(option){

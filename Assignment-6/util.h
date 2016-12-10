@@ -139,7 +139,7 @@ struct passwordEntry
 
 typedef struct passwordEntry LLEntry ; 
 
-LLEntry * head ; 
+LLEntry * head = NULL;
 
 
 /*Takes a user name and searches whether the user is present in the password data-structure*/
